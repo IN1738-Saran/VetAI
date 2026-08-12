@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics - VetAI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <base href="/api/">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      min-height: 100vh;
+      color: #1a1a1a;
+      overflow-x: hidden;
+    }
+    .container { display: flex; min-height: 100vh; }
+
+    /* ── Sidebar (identical to other pages) ── */
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #051C38 0%, #0d2a4a 100%);
+      color: white;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
+    }
+    .logo-section {
+      text-align: center;
+      padding: 10px;
+      border-bottom: 1px solid rgba(241,180,52,0.2);
+      margin: 10px 0;
+    }
+    .logo { display: flex; flex-direction: row; align-items: center; gap: 15px; }
+    .logo-icon {
+      width: 50px; height: 50px;
+      background: linear-gradient(45deg, rgb(241,180,52), #ffd700);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: bold; color: #051C38;
+      object-fit: contain; flex-shrink: 0;
+    }
+    .logo-text-container { display: flex; flex-direction: column; align-items: flex-start; }
+    .logo-text { font-size: 22px; font-weight: 600; color: rgb(241,180,52); line-height: 1.2; }
+    .logo-subtitle { font-size: 13px; color: rgba(255,255,255,0.7); margin-top: 2px; }
+    .nav-section { margin-bottom: 30px; padding: 0 15px; }
+    .nav-title {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      color: rgba(255,255,255,0.5); margin-bottom: 12px;
+      letter-spacing: 0.5px; padding-left: 10px;
+    }
+    .nav-item {
+      padding: 15px 25px; margin: 5px 0; border-radius: 12px;
+      cursor: pointer; transition: all 0.3s ease;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .nav-item:hover { background: rgba(241,180,52,0.1); transform: translateX(5px); }
+    .nav-item.active {
+      background: linear-gradient(135deg, rgb(241,180,52), #ffd700);
+      color: #051C38; font-weight: 600;
+    }
+    .nav-icon { font-size: 18px; }
+
+    /* ── Main content ── */
+    .main-content {
+      flex: 1; margin-left: 260px; padding: 24px;
+      background: #f5f7fa; min-height: 100vh;
+    }
+    .header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px; padding-bottom: 16px;
+      border-bottom: 2px solid #e8eaf0;
+    }
+    .header-left h1 {
+      color: #051C38; font-size: 28px; font-weight: 700; position: relative; margin-bottom: 6px;
+    }
+    .header-left h1::after {
+      content: ''; position: absolute; bottom: -4px; left: 0;
+      width: 60px; height: 4px;
+      background: linear-gradient(90deg, rgb(241,180,52), #ffd700); border-radius: 2px;
+    }
+    .page-subtitle { font-size: 14px; color: #6b7280; }
+    .header-right { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+    .user-info {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 18px;
+      background: linear-gradient(135deg, #051C38, #0d2a4a);
+      border-radius: 25px; color: white; font-size: 14px;
+    }
+    .user-avatar {
+      width: 36px; height: 36px; background: rgb(241,180,52);
+      border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-weight: bold; color: #051C38; font-size: 14px;
+    }
+    .company-logo {
+      height: 50px; width: 50px; object-fit: contain;
+      border-radius: 8px; background: white; padding: 4px;
+    }
+    .btn-refresh {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, rgb(241,180,52), #ffd700);
+      color: #051C38; border: none; border-radius: 20px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-refresh:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(241,180,52,0.3); }
+
+    /* ── Stat cards ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+					   
+    }
+    .stat-card {
+      background: white; border-radius: 16px; padding: 20px 22px;
+      border: 1px solid #e8eaf0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      position: relative; overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+    .stat-card::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 4px; height: 100%; border-radius: 16px 0 0 16px;
+    }
+    .stat-card.blue::before   { background: #3b82f6; }
+    .stat-card.green::before  { background: #10b981; }
+    .stat-card.amber::before  { background: rgb(241,180,52); }
+    .stat-card.red::before    { background: #ef4444; }
+    .stat-label {
+      font-size: 12px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: #6b7280; margin-bottom: 10px;
+    }
+    .stat-value {
+      font-size: 32px; font-weight: 700; color: #051C38; line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-sub {
+      font-size: 12px; color: #9ca3af; display: flex; align-items: center; gap: 4px;
+    }
+    .stat-icon {
+      position: absolute; top: 16px; right: 16px;
+      font-size: 28px; opacity: 0.12;
+    }
+
+    /* ── Chart cards ── */
+    .charts-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .charts-row-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .chart-card {
+      background: white; border-radius: 16px; padding: 20px 22px;
+      border: 1px solid #e8eaf0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .chart-card.full { grid-column: 1 / -1; }
+    .chart-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .chart-title { font-size: 15px; font-weight: 600; color: #051C38; }
+    .chart-subtitle { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+    .chart-badge {
+      font-size: 11px; font-weight: 600; padding: 4px 10px;
+      border-radius: 20px; background: #f0f2f5; color: #6b7280;
+    }
+    .chart-canvas-wrap { position: relative; width: 100%; }
+
+    /* ── Custom legends ── */
+    .chart-legend {
+      display: flex; flex-wrap: wrap; gap: 12px;
+      margin-bottom: 14px; font-size: 12px; color: #6b7280;
+    }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+    /* ── Loading spinner ── */
+    .loading-wrap {
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; gap: 12px; padding: 40px;
+      color: #9ca3af; font-size: 14px;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #e8eaf0;
+      border-top-color: rgb(241,180,52);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Empty / error state ── */
+    .empty-state {
+      text-align: center; padding: 40px; color: #9ca3af; font-size: 14px;
+    }
+
+    /* ── Top jobs table ── */
+    .jobs-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .jobs-table thead tr { border-bottom: 2px solid #f0f2f5; }
+    .jobs-table th {
+      padding: 10px 12px; text-align: left;
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.5px; color: #9ca3af;
+    }
+    .jobs-table td { padding: 11px 12px; border-bottom: 1px solid #f9fafb; color: #1a1a1a; }
+    .jobs-table tbody tr:hover { background: #fafafa; }
+    .jobs-table tbody tr:last-child td { border-bottom: none; }
+    .progress-bar-bg {
+      background: #f0f2f5; border-radius: 4px; height: 6px;
+      overflow: hidden; width: 100%; min-width: 80px;
+    }
+    .progress-bar-fill {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, rgb(241,180,52), #ffd700);
+      transition: width 0.6s ease;
+    }
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+    }
+    .badge-blue   { background: #dbeafe; color: #1e40af; }
+    .badge-green  { background: #d1fae5; color: #065f46; }
+    .badge-amber  { background: #fef3c7; color: #92400e; }
+    .badge-red    { background: #fee2e2; color: #991b1b; }
+    .badge-gray   { background: #f3f4f6; color: #374151; }
+
+    @media (max-width: 1200px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .charts-row-3 { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 1024px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; }
+      .charts-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .charts-row-3 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo-section">
+      <div class="logo">
+        <img src="/AI_Text_1.jpg" alt="VetAI" class="logo-icon"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div class="logo-icon" style="display:none;">IA</div>
+        <div class="logo-text-container">
+          <div class="logo-text">VetAI</div>
+          <div class="logo-subtitle">AI Powered Interviews</div>
+        </div>
+      </div>
+    </div>
+    <nav>
+      <div class="nav-section">
+        <div class="nav-title">Main</div>
+        <div class="nav-item" onclick="window.location.href='/api'">
+          <span class="nav-icon">➕</span><span>Create Interview</span>
+        </div>
+        <div class="nav-item" onclick="window.location.href='/api/dashboard'">
+          <span class="nav-icon">📊</span><span>Dashboard</span>
+        </div>
+        <div class="nav-item active">
+          <span class="nav-icon">📈</span><span>Analytics</span>
+        </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-title">Settings</div>
+        <div class="nav-item">
+          <span class="nav-icon">⚙️</span><span>Configuration</span>
+        </div>
+        <div class="nav-item">
+          <span class="nav-icon">🔗</span><span>Webhooks</span>
+        </div>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <h1>Analytics</h1>
+        <p class="page-subtitle">Insights across all interview sessions</p>
+      </div>
+      <div class="header-right">
+        <button class="btn-refresh" onclick="loadAnalytics()">
+          <span>🔄</span><span>Refresh</span>
+        </button>
+        <div class="user-info">
+          <div class="user-avatar">U</div>
+          <span>User</span>
+        </div>
+        <img src="/Systech_Logo1.png" alt="Systech" class="company-logo"
+             onerror="this.style.display='none'">
+      </div>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="loading-wrap" style="grid-column:1/-1">
+        <div class="spinner"></div><span>Loading analytics…</span>
+      </div>
+    </div>
+
+    <!-- Row 1: Candidates by Job Title (full) -->
+    <div class="charts-row" style="margin-bottom:16px;">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Candidates by Job Title</div>
+            <div class="chart-subtitle">Total submissions per role</div>
+          </div>
+          <span class="chart-badge" id="jobBadge">—</span>
+        </div>
+        <div class="chart-canvas-wrap" id="jobBarWrap" style="height:300px;">
+          <canvas id="jobBarChart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Completion Status</div>
+            <div class="chart-subtitle">Interview pipeline breakdown</div>
+          </div>
+        </div>
+        <div class="chart-legend" id="statusLegend"></div>
+        <div class="chart-canvas-wrap" style="height:240px;">
+          <canvas id="statusDoughnut"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2: Verdict distribution + Score distribution -->
+    <div class="charts-row-3">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Verdict Distribution</div>
+            <div class="chart-subtitle">Pass vs Fail vs Pending</div>
+          </div>
+        </div>
+        <div class="chart-legend" id="verdictLegend"></div>
+        <div class="chart-canvas-wrap" style="height:220px;">
+          <canvas id="verdictDoughnut"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Score Distribution</div>
+            <div class="chart-subtitle">Candidates per score band</div>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap" style="height:220px;">
+          <canvas id="scoreBand"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Monthly Submissions</div>
+            <div class="chart-subtitle">Interviews created over time</div>
+          </div>
+        </div>
+        <div class="chart-canvas-wrap" style="height:220px;">
+          <canvas id="monthlyLine"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 3: Job-title breakdown table -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Role Performance Summary</div>
+          <div class="chart-subtitle">Completion and pass rates by job title</div>
+        </div>
+      </div>
+      <table class="jobs-table">
+        <thead>
+          <tr>
+            <th>Job Title</th>
+            <th>Total</th>
+            <th>Completed</th>
+            <th>Pass</th>
+            <th>Fail</th>
+            <th>Avg Score</th>
+            <th>Completion Rate</th>
+          </tr>
+        </thead>
+        <tbody id="jobsTableBody">
+          <tr><td colspan="7" class="empty-state">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ─── Chart instances (so we can destroy on re-load) ─── */
+const charts = {};
+
+function destroyAll() {
+  Object.values(charts).forEach(c => { try { c.destroy(); } catch(e) {} });
+  Object.keys(charts).forEach(k => delete charts[k]);
+}
+
+/* ─── Color helpers ─── */
+const PALETTE = {
+  blue:   ['#3b82f6','#60a5fa','#93c5fd','#bfdbfe'],
+  green:  '#10b981',
+  amber:  'rgb(241,180,52)',
+  red:    '#ef4444',
+  purple: '#8b5cf6',
+  teal:   '#14b8a6',
+  pink:   '#ec4899',
+  indigo: '#6366f1',
+};
+const MULTI = ['#3b82f6','#10b981','rgb(241,180,52)','#ef4444','#8b5cf6','#14b8a6','#ec4899','#f97316','#6366f1','#84cc16'];
+
+function pct(n, total) { return total ? Math.round((n / total) * 100) : 0; }
+
+/* ─── Stat cards ─── */
+function renderStats(candidates) {
+  const total      = candidates.length;
+  const completed  = candidates.filter(c => (c.status||'').toLowerCase().includes('complet') || c.completedAt).length;
+  const pending    = candidates.filter(c => (c.status||'').toLowerCase().includes('pend')).length;
+  const passed     = candidates.filter(c => (c.verdict||'').toLowerCase().includes('pass') || (c.verdict||'').toLowerCase().includes('accept')).length;
+  const passRate   = completed ? Math.round((passed / completed) * 100) : 0;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card blue">
+      <div class="stat-label">Total Screened</div>
+      <div class="stat-value">${total}</div>
+      <div class="stat-sub">All time submissions</div>
+      <div class="stat-icon">👥</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">Completed</div>
+      <div class="stat-value">${completed}</div>
+      <div class="stat-sub">${pct(completed,total)}% of total</div>
+      <div class="stat-icon">✅</div>
+    </div>
+    <div class="stat-card amber">
+      <div class="stat-label">Pending / Active</div>
+      <div class="stat-value">${pending}</div>
+      <div class="stat-sub">${pct(pending,total)}% of total</div>
+      <div class="stat-icon">⏳</div>
+    </div>
+    <div class="stat-card ${passRate >= 50 ? 'green' : 'red'}">
+      <div class="stat-label">Pass Rate</div>
+      <div class="stat-value">${passRate}%</div>
+      <div class="stat-sub">${passed} of ${completed} completed</div>
+      <div class="stat-icon">🏆</div>
+    </div>
+  `;
+}
+
+/* ─── Bar chart: candidates per job title ─── */
+function renderJobBar(candidates) {
+  const counts = {};
+  candidates.forEach(c => {
+    const t = c.jobtitle || 'Unknown';
+    counts[t] = (counts[t] || 0) + 1;
+  });
+  const sorted   = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  const labels   = sorted.map(x => x[0]);
+  const data     = sorted.map(x => x[1]);
+  const colors   = labels.map((_,i) => MULTI[i % MULTI.length]);
+
+  document.getElementById('jobBadge').textContent = labels.length + ' roles';
+
+  const wrapH = Math.max(300, labels.length * 44 + 60);
+  const wrap = document.getElementById('jobBarWrap');
+  wrap.style.height = wrapH + 'px';
+
+  charts.jobBar = new Chart(document.getElementById('jobBarChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: 'Candidates', data, backgroundColor: colors, borderRadius: 6, borderSkipped: false }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ' ' + ctx.parsed.x + ' candidate' + (ctx.parsed.x !== 1 ? 's' : '') }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: '#f0f2f5' },
+          ticks: { stepSize: 1, font: { size: 12 } }
+        },
+        y: { grid: { display: false }, ticks: { font: { size: 12 } } }
+      }
+    }
+  });
+}
+
+/* ─── Doughnut: status ─── */
+function renderStatusDoughnut(candidates) {
+  const counts = {};
+  candidates.forEach(c => {
+    const s = (c.status || 'unknown').toLowerCase();
+    let bucket = 'Other';
+    if (s.includes('complet') || s.includes('finish')) bucket = 'Completed';
+    else if (s.includes('pend'))                          bucket = 'Pending';
+    else if (s.includes('active'))                        bucket = 'Active';
+    else if (s.includes('cancel') || s.includes('expir')) bucket = 'Cancelled / Expired';
+    counts[bucket] = (counts[bucket] || 0) + 1;
+  });
+
+  const colorMap = {
+    'Completed': '#10b981', 'Pending': 'rgb(241,180,52)',
+    'Active': '#3b82f6', 'Cancelled / Expired': '#ef4444', 'Other': '#9ca3af'
+  };
+  const labels = Object.keys(counts);
+  const data   = Object.values(counts);
+  const colors = labels.map(l => colorMap[l] || '#9ca3af');
+  const total  = data.reduce((a,b) => a+b, 0);
+
+  document.getElementById('statusLegend').innerHTML = labels.map((l,i) =>
+    `<span class="legend-item">
+       <span class="legend-dot" style="background:${colors[i]}"></span>
+       ${l} ${pct(data[i],total)}%
+     </span>`
+  ).join('');
+
+  charts.statusD = new Chart(document.getElementById('statusDoughnut'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + ' (' + pct(ctx.parsed, total) + '%)' } }
+      }
+    }
+  });
+}
+
+/* ─── Doughnut: verdict ─── */
+function renderVerdictDoughnut(candidates) {
+  const completed = candidates.filter(c =>
+    (c.status||'').toLowerCase().includes('complet') || c.completedAt
+  );
+  let pass=0, fail=0, pending=0;
+  completed.forEach(c => {
+    const v = (c.verdict||'').toLowerCase();
+    if (v.includes('pass')||v.includes('accept')||v.includes('qualif')) pass++;
+    else if (v.includes('fail')||v.includes('reject'))                   fail++;
+    else pending++;
+  });
+  const nc = candidates.length - completed.length;
+
+  const labels = ['Passed','Failed','Needs Review','Not Completed'];
+  const data   = [pass, fail, pending, nc];
+  const colors = ['#10b981','#ef4444','rgb(241,180,52)','#9ca3af'];
+  const total  = data.reduce((a,b)=>a+b,0);
+
+  document.getElementById('verdictLegend').innerHTML = labels.map((l,i) =>
+    data[i] > 0 ? `<span class="legend-item">
+       <span class="legend-dot" style="background:${colors[i]}"></span>
+       ${l} ${pct(data[i],total)}%</span>` : ''
+  ).join('');
+
+  charts.verdictD = new Chart(document.getElementById('verdictDoughnut'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+/* ─── Bar: score bands ─── */
+function renderScoreBand(candidates) {
+  const bands = { '0–40': 0, '41–60': 0, '61–75': 0, '76–89': 0, '90–100': 0 };
+  candidates.forEach(c => {
+    const s = parseFloat(c.overall_score);
+    if (isNaN(s)) return;
+    if (s <= 40)       bands['0–40']++;
+    else if (s <= 60)  bands['41–60']++;
+    else if (s <= 75)  bands['61–75']++;
+    else if (s <= 89)  bands['76–89']++;
+    else               bands['90–100']++;
+  });
+  const labels = Object.keys(bands);
+  const data   = Object.values(bands);
+  const colors = ['#ef4444','#f97316','rgb(241,180,52)','#3b82f6','#10b981'];
+
+  charts.score = new Chart(document.getElementById('scoreBand'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderRadius: 6, borderSkipped: false }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { grid: { color: '#f0f2f5' }, ticks: { stepSize: 1, font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+/* ─── Line: monthly submissions ─── */
+function renderMonthlyLine(candidates) {
+  const monthly = {};
+  candidates.forEach(c => {
+    if (!c.createdat) return;
+    const d = new Date(c.createdat);
+    const key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    monthly[key] = (monthly[key]||0) + 1;
+  });
+  const sorted = Object.entries(monthly).sort((a,b) => a[0].localeCompare(b[0]));
+  const labels = sorted.map(([k]) => {
+    const [y,m] = k.split('-');
+    return new Date(+y, +m-1).toLocaleString('default',{month:'short',year:'2-digit'});
+  });
+  const data = sorted.map(x => x[1]);
+
+  charts.monthly = new Chart(document.getElementById('monthlyLine'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Submissions', data,
+        borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.08)',
+        borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#3b82f6',
+        fill: true, tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 }, autoSkip: false, maxRotation: 45 } },
+        y: { grid: { color: '#f0f2f5' }, ticks: { stepSize: 1, font: { size: 11 } }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+/* ─── Jobs table ─── */
+function renderJobsTable(candidates) {
+  const roles = {};
+  candidates.forEach(c => {
+    const t = c.jobtitle || 'Unknown';
+    if (!roles[t]) roles[t] = { total:0, completed:0, pass:0, fail:0, scores:[] };
+    roles[t].total++;
+    const isDone = (c.status||'').toLowerCase().includes('complet') || c.completedAt;
+    if (isDone) roles[t].completed++;
+    const v = (c.verdict||'').toLowerCase();
+    if (v.includes('pass')||v.includes('accept')) roles[t].pass++;
+    else if (v.includes('fail')||v.includes('reject')) roles[t].fail++;
+    const s = parseFloat(c.overall_score);
+    if (!isNaN(s)) roles[t].scores.push(s);
+  });
+
+  const sorted = Object.entries(roles).sort((a,b) => b[1].total - a[1].total);
+  const maxTotal = sorted[0]?.[1].total || 1;
+
+  const tbody = document.getElementById('jobsTableBody');
+  if (!sorted.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No data</td></tr>'; return; }
+
+  tbody.innerHTML = sorted.map(([title, r]) => {
+    const avgScore = r.scores.length ? Math.round(r.scores.reduce((a,b)=>a+b,0) / r.scores.length) : null;
+    const completionPct = pct(r.completed, r.total);
+    const scoreColor = avgScore === null ? 'gray'
+                    : avgScore >= 75 ? 'green'
+                    : avgScore >= 50 ? 'amber' : 'red';
+    return `<tr>
+      <td><strong>${title}</strong></td>
+      <td><span class="badge badge-blue">${r.total}</span></td>
+      <td>${r.completed}</td>
+      <td><span class="badge badge-green">${r.pass}</span></td>
+      <td><span class="badge badge-red">${r.fail}</span></td>
+      <td>${avgScore !== null ? '<span class="badge badge-' + scoreColor + '">' + avgScore + '%</span>' : '<span style="color:#9ca3af">N/A</span>'}</td>
+      <td style="min-width:140px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" style="width:${completionPct}%"></div>
+          </div>
+          <span style="font-size:12px;color:#6b7280;white-space:nowrap">${completionPct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ─── Main load function ─── */
+async function loadAnalytics() {
+  destroyAll();
+  document.getElementById('statsGrid').innerHTML =
+    '<div class="loading-wrap" style="grid-column:1/-1"><div class="spinner"></div><span>Loading analytics…</span></div>';
+  document.getElementById('jobsTableBody').innerHTML =
+    '<tr><td colspan="7" class="empty-state">Loading…</td></tr>';
+
+  try {
+    const res = await fetch('https://n8n.systechusa.com/webhook/dataentry?ts=' + Date.now(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
+      body: JSON.stringify({ timestamp: Date.now() })
+    });
+    const raw = await res.json();
+
+    let candidates = [];
+    if (Array.isArray(raw)) candidates = raw;
+    else if (raw && (raw.candidatename || raw.candidateemail)) candidates = [raw];
+    else if (raw?.data) candidates = Array.isArray(raw.data) ? raw.data : [raw.data];
+    else if (raw?.result) candidates = Array.isArray(raw.result) ? raw.result : [raw.result];
+    else candidates = [raw];
+
+    if (!candidates.length) {
+      document.getElementById('statsGrid').innerHTML =
+        '<div class="empty-state" style="grid-column:1/-1">No candidate data found.</div>';
+      return;
+    }
+
+    renderStats(candidates);
+    renderJobBar(candidates);
+    renderStatusDoughnut(candidates);
+    renderVerdictDoughnut(candidates);
+    renderScoreBand(candidates);
+    renderMonthlyLine(candidates);
+    renderJobsTable(candidates);
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('statsGrid').innerHTML =
+      '<div class="empty-state" style="grid-column:1/-1">⚠️ Failed to load data: ' + err.message + '</div>';
+  }
+}
+
+window.addEventListener('DOMContentLoaded', loadAnalytics);
+</script>
+</body>
+</html>
