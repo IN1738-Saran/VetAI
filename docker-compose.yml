@@ -22,11 +22,20 @@ services:
       - "80"
     networks: [appnet]
 
+  admin-frontend:
+    build:
+      context: ./admin-frontend
+    container_name: interview-admin-frontend
+    expose:
+      - "80"
+    networks: [appnet]
+
   reverse-proxy:
     image: nginx:1.27-alpine
     container_name: interview-proxy
     depends_on:
       - frontend
+      - admin-frontend
       - backend
     ports:
       - "80:80"
