@@ -13,11 +13,12 @@ interface DataTableProps<T> {
   rowKey: (row: T) => string;
   emptyState?: ReactNode;
   loading?: boolean;
+  onRowClick?: (row: T) => void;
 }
 
 // Sorting/filtering/pagination are wired against the real candidates feed
 // starting Phase 3 - this is the shared visual/structural shell only.
-export function DataTable<T>({ columns, rows, rowKey, emptyState, loading }: DataTableProps<T>) {
+export function DataTable<T>({ columns, rows, rowKey, emptyState, loading, onRowClick }: DataTableProps<T>) {
   return (
     <div className="overflow-x-auto rounded-card bg-card shadow-card">
       <table className="w-full min-w-[640px] border-collapse text-left text-[13px]">
@@ -48,7 +49,14 @@ export function DataTable<T>({ columns, rows, rowKey, emptyState, loading }: Dat
             </tr>
           ) : (
             rows.map((row) => (
-              <tr key={rowKey(row)} className="border-b border-border last:border-0 hover:bg-surface">
+              <tr
+                key={rowKey(row)}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                className={
+                  'border-b border-border last:border-0 hover:bg-surface' +
+                  (onRowClick ? ' cursor-pointer' : '')
+                }
+              >
                 {columns.map((col) => (
                   <td key={col.key} className={'px-4 py-3 align-middle ' + (col.className ?? '')}>
                     {col.render(row)}

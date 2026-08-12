@@ -1,15 +1,25 @@
-// Ported verbatim from backend/src/views/dashboard.html's
-// getScoreBadgeClass / getVerdictBadgeClass / getStatusBadgeClass
-// (implementation plan Strict Constraint #10: reuse existing thresholds,
-// do not invent new ones). badge-success/warning/danger/info map to the
-// green/amber/red/blue semantic tones used throughout the new design system.
+// verdictTone/statusTone were originally ported verbatim from
+// dashboard.html's getVerdictBadgeClass/getStatusBadgeClass, which assume
+// free-text values (pass/accept/qualified, fail/reject, pending/scheduled,
+// cancelled/failed). A live Phase 3 smoke test against the real
+// webhook/dataentry feed (2,903 records, inspected 2026-08-13) proved that
+// assumption wrong: both fields are actually small controlled enums, and
+// the free-text heuristic misclassified ~2,900/2,903 records as
+// "needs review" with a 0% pass rate. Rewritten below against the real
+// values, with the original keyword heuristic kept as a fallback net for
+// any value outside what was observed live.
+//
+// Real verdict values seen: strong_fit (1002), fit (900), borderline (509,
+// plus 1 dirty "Borderline"), weak_fit (488), reject (2), null (1).
+// Real status values seen: "Interview Not Scheduled" (1968),
+// "Interview Scheduled" (526), "Interview Completed" (409).
+//
+// scoreTone's numeric thresholds were NOT changed - overall_score is a
+// genuine 0-100 numeric score and the >=80/>=60 cutoffs from
+// getScoreBadgeClass hold up fine against real data.
 import type { SemanticTone } from '@/types';
 
 export function scoreTone(score: number | string | null | undefined): SemanticTone {
-  // Matches getScoreBadgeClass exactly: falsy score falls through to
-  // badge-info (blue), not a "not scored yet" gray - that gray treatment is
-  // a distinct, new UI pattern applied only to sub-scores absent from a real
-  // payload (see components/NotScoredYet.tsx), not to this ported function.
   if (score === null || score === undefined || score === '') return 'blue';
   const numScore = typeof score === 'string' ? parseFloat(score) : score;
   if (Number.isNaN(numScore)) return 'blue';
@@ -18,19 +28,39 @@ export function scoreTone(score: number | string | null | undefined): SemanticTo
   return 'red';
 }
 
+const VERDICT_TONE: Record<string, SemanticTone> = {
+  strong_fit: 'green',
+  fit: 'blue',
+  borderline: 'amber',
+  weak_fit: 'red',
+  reject: 'red',
+};
+
 export function verdictTone(verdict: string | null | undefined): SemanticTone {
-  if (!verdict) return 'blue';
-  const lower = verdict.toLowerCase();
-  if (lower.includes('pass') || lower.includes('accept') || lower.includes('qualified')) return 'green';
-  if (lower.includes('fail') || lower.includes('reject')) return 'red';
-  return 'amber';
+  if (!verdict || verdict === 'null') return 'gray'; // genuinely unscored, not "info"
+  const normalized = verdict.trim().toLowerCase();
+  if (normalized in VERDICT_TONE) return VERDICT_TONE[normalized];
+
+  // Fallback net for a value never observed live.
+  if (normalized.includes('pass') || normalized.includes('accept') || normalized.includes('qualified')) return 'green';
+  if (normalized.includes('fail') || normalized.includes('reject')) return 'red';
+  return 'gray';
 }
 
+const STATUS_TONE: Record<string, SemanticTone> = {
+  'interview completed': 'green',
+  'interview scheduled': 'amber',
+  'interview not scheduled': 'blue',
+};
+
 export function statusTone(status: string | null | undefined): SemanticTone {
-  if (!status) return 'blue';
-  const lower = status.toLowerCase();
-  if (lower.includes('completed') || lower.includes('finished')) return 'green';
-  if (lower.includes('pending') || lower.includes('scheduled')) return 'amber';
-  if (lower.includes('cancelled') || lower.includes('failed')) return 'red';
-  return 'blue';
+  if (!status) return 'gray';
+  const normalized = status.trim().toLowerCase();
+  if (normalized in STATUS_TONE) return STATUS_TONE[normalized];
+
+  // Fallback net for a value never observed live.
+  if (normalized.includes('completed') || normalized.includes('finished')) return 'green';
+  if (normalized.includes('cancelled') || normalized.includes('failed')) return 'red';
+  if (normalized.includes('scheduled') || normalized.includes('pending')) return 'amber';
+  return 'gray';
 }
