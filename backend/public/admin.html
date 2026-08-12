@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Link Generator</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+      font-family: inherit;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .result h3 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+
+    .link-container {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .generated-link {
+      flex: 1;
+      padding: 12px;
+      background: white;
+      border: 2px solid #667eea;
+      border-radius: 8px;
+      color: #667eea;
+      word-break: break-all;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+
+    .copy-btn {
+      padding: 12px 24px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: background 0.3s;
+    }
+
+    .copy-btn:hover {
+      background: #5568d3;
+    }
+
+    .copy-btn.copied {
+      background: #4caf50;
+    }
+
+    .sessions-list {
+      margin-top: 30px;
+      padding-top: 30px;
+      border-top: 2px solid #e0e0e0;
+    }
+
+    .sessions-list h3 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 18px;
+    }
+
+    .session-item {
+      padding: 15px;
+      background: #f9f9f9;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .session-item strong {
+      color: #667eea;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎤 AI Interview Generator</h1>
+    <p class="subtitle">Create unique interview links for candidates</p>
+
+    <form id="interviewForm">
+      <div class="form-group">
+        <label for="jobTitle">Job Title</label>
+        <input 
+          type="text" 
+          id="jobTitle" 
+          placeholder="e.g., Senior Software Engineer"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="jobDescription">Job Description</label>
+        <textarea 
+          id="jobDescription" 
+          placeholder="Brief job description and key requirements..."
+          required
+        ></textarea>
+      </div>
+
+      <button type="submit">Generate Interview Link</button>
+    </form>
+
+    <div class="result" id="result">
+      <h3>✅ Interview Link Generated!</h3>
+      <div class="link-container">
+        <div class="generated-link" id="generatedLink"></div>
+        <button class="copy-btn" id="copyBtn">Copy</button>
+      </div>
+      <p style="margin-top: 15px; color: #666; font-size: 14px;">
+        Share this link with the candidate. The AI will automatically start the interview when they click it.
+      </p>
+    </div>
+
+    <div class="sessions-list" id="sessionsList" style="display: none;">
+      <h3>Recent Interview Sessions</h3>
+      <div id="sessionsContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('interviewForm');
+    const result = document.getElementById('result');
+    const generatedLink = document.getElementById('generatedLink');
+    const copyBtn = document.getElementById('copyBtn');
+    const sessionsList = document.getElementById('sessionsList');
+    const sessionsContainer = document.getElementById('sessionsContainer');
+
+    let recentSessions = [];
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const jobTitle = document.getElementById('jobTitle').value;
+      const jobDescription = document.getElementById('jobDescription').value;
+
+      try {
+        const response = await fetch('http://localhost:3001/api/generate-interview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ jobTitle, jobDescription }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          generatedLink.textContent = data.interviewUrl;
+          result.classList.add('show');
+
+          // Add to recent sessions
+          recentSessions.unshift({
+            jobTitle,
+            sessionId: data.sessionId,
+            url: data.interviewUrl,
+            createdAt: new Date().toLocaleString()
+          });
+
+          updateSessionsList();
+        }
+      } catch (error) {
+        alert('Error generating interview link. Make sure the server is running.');
+        console.error(error);
+      }
+    });
+
+    copyBtn.addEventListener('click', () => {
+      const link = generatedLink.textContent;
+      navigator.clipboard.writeText(link).then(() => {
+        copyBtn.textContent = 'Copied!';
+        copyBtn.classList.add('copied');
+
+        setTimeout(() => {
+          copyBtn.textContent = 'Copy';
+          copyBtn.classList.remove('copied');
+        }, 2000);
+      });
+    });
+
+    function updateSessionsList() {
+      if (recentSessions.length === 0) return;
+
+      sessionsList.style.display = 'block';
+      sessionsContainer.innerHTML = recentSessions.map(session => `
+        <div class="session-item">
+          <strong>${session.jobTitle}</strong><br>
+          <small style="color: #666;">Created: ${session.createdAt}</small><br>
+          <small style="color: #667eea;">${session.url}</small>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

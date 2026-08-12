@@ -1,0 +1,24 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+
+# Local runtime artifacts
+backend/transcripts/
+backend/videos/
+
+# Certs (kept out of version control; provisioned per-environment)
+certs/
+reverse-proxy/certs/*.pem
+
+# Editor/OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+
+# Orphaned worktree pointer from a prior session on a different machine
+.claude/worktrees/

@@ -1,0 +1,33 @@
+# Without this file, `COPY . .` in the Dockerfile did two harmful things:
+#
+# 1. It baked .env / .env.local — the Azure Voice Live key, the Postgres
+#    password and the storage connection string — into an image layer. Anyone
+#    who can pull the image can read them, and they persist in the layer even if
+#    a later instruction deletes the file. Credentials must arrive at RUNTIME
+#    (docker-compose already does this via `env_file`), never at build time.
+#
+# 2. It copied the HOST's node_modules over the ones just installed by
+#    `npm install --production`. The host is Windows and the image is
+#    linux/alpine, so any package with a native binding was silently replaced
+#    with an incompatible build.
+node_modules
+npm-debug.log
+
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+.vscode
+.dockerignore
+Dockerfile
+
+# Old pre-migration snapshots — not imported by src/, just dead weight (and
+# they were reachable over HTTP until the express.static mount was scoped down).
+legacy
+
+# Local scratch
+*.log
+uploads
+recordings

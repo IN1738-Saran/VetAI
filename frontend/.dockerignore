@@ -1,0 +1,26 @@
+# See backend/.dockerignore for the full rationale. Same two problems:
+# `COPY . .` ran after `npm ci` and clobbered the container's node_modules with
+# the Windows host's, and it copied .env files into the build stage.
+#
+# The frontend leak is narrower than the backend's — Vite only exposes
+# VITE_-prefixed vars to client code, and vite.config.ts discards its loadEnv()
+# result — but frontend/.env.local defines VITE_AZURE_VOICELIVE_API_KEY, which
+# WOULD be inlined into the bundle the moment any code referenced it. Keep the
+# env files out of the image entirely so that mistake cannot happen.
+node_modules
+npm-debug.log
+
+.env
+.env.*
+!.env.example
+
+dist
+.git
+.gitignore
+.dockerignore
+Dockerfile
+
+# Pre-migration Gemini snapshots; excluded from tsconfig and never imported.
+legacy
+
+*.log

@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interview Management System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <base href="/api/">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      color: #1a1a1a;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: linear-gradient(180deg, #051C38 0%, #0d2a4a 100%);
+      color: white;
+      padding: 0px;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    .logo-section {
+      text-align: center;
+      padding: 10px;
+      border-bottom: 1px solid rgba(241, 180, 52, 0.2);
+      margin-bottom: 10px;
+      margin-top: 10px;
+    }
+
+   .logo {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo-icon {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(45deg, rgb(241, 180, 52), #ffd700);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: bold;
+  color: #051C38;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.logo-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.logo-text {
+  font-size: 22px;
+  font-weight: 600;
+  color: rgb(241, 180, 52);
+  line-height: 1.2;
+}
+
+.logo-subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  margin-top: 2px;
+}
+
+    .nav-section {
+      margin-bottom: 30px;
+      padding: 0 15px;
+    }
+
+    .nav-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+      margin-bottom: 12px;
+      letter-spacing: 0.5px;
+      padding-left: 10px;
+    }
+
+    .nav-item {
+      padding: 15px 25px;
+      margin: 5px 0;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-item:hover {
+      background: rgba(241, 180, 52, 0.1);
+      transform: translateX(5px);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, rgb(241, 180, 52), #ffd700);
+      color: #051C38;
+      font-weight: 600;
+    }
+
+    .nav-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      width: 4px;
+      background: rgb(241, 180, 52);
+      transform: scaleY(0);
+      transition: transform 0.3s ease;
+    }
+
+    .nav-item.active::before {
+      transform: scaleY(1);
+    }
+
+    .nav-icon {
+      font-size: 18px;
+    }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 20px;
+      background: white;
+      position: relative;
+      overflow-y: auto;
+    }
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f0f2f5;
+  gap: 20px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-left: auto;
+}
+
+    .header-left h1 {
+      color: #051C38;
+      font-size: 30px;
+      font-weight: 700;
+      position: relative;
+      margin-bottom: 10px;
+    }
+
+    .header-left h1::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, rgb(241, 180, 52), #ffd700);
+      border-radius: 2px;
+    }
+
+    .page-subtitle {
+      font-size: 15px;
+      color: #6b7280;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, #051C38, #0d2a4a);
+      border-radius: 25px;
+      color: white;
+    }
+
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      background: rgb(241, 180, 52);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #051C38;
+    }
+
+    .company-logo {
+  height: 55px;
+  width: 55px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: white;
+  padding: 5px;
+}
+
+    /* Form Container */
+    .content-card {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+      border: 1px solid #e1e8ed;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .form-section {
+      margin-bottom: 30px;
+    }
+
+    .form-section h3 {
+      color: #051C38;
+      margin-bottom: 20px;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 28px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #051C38;
+      margin-bottom: 8px;
+    }
+
+    .form-input,
+    .form-textarea {
+      width: 100%;
+      padding: 15px;
+      border: 2px solid #e1e8ed;
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+      transition: all 0.3s ease;
+      background: white;
+      color: #1a1a1a;
+    }
+
+    .form-input:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: rgb(241, 180, 52);
+      box-shadow: 0 0 0 3px rgba(241, 180, 52, 0.1);
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+      color: #9ca3af;
+    }
+
+    .form-textarea {
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    /* File Upload Area */
+    .file-upload-wrapper {
+      border: 3px dashed rgb(241, 180, 52);
+      border-radius: 15px;
+      padding: 40px;
+      text-align: center;
+      transition: all 0.3s ease;
+      background: linear-gradient(135deg, rgba(241, 180, 52, 0.05), rgba(241, 180, 52, 0.1));
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .file-upload-wrapper.error {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.1));
+  animation: shake 0.5s ease;
+}
+
+.alert-error {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+    /* Compact version for side-by-side layout */
+    .file-upload-compact {
+      padding: 25px 20px;
+      border-width: 2px;
+    }
+
+    .file-upload-compact .upload-icon {
+      width: 36px;
+      height: 36px;
+      margin: 0 auto 12px;
+      font-size: 20px;
+    }
+
+    .file-upload-compact .upload-text {
+      font-size: 15px;
+      margin-bottom: 3px;
+    }
+
+    .file-upload-compact .upload-hint {
+      font-size: 12px;
+    }
+
+    .file-upload-wrapper:hover {
+      border-color: #ffd700;
+      background: linear-gradient(135deg, rgba(241, 180, 52, 0.1), rgba(241, 180, 52, 0.15));
+      transform: translateY(-2px);
+    }
+
+    .file-upload-wrapper.has-file {
+      border-color: #10b981;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.1));
+    }
+
+    .file-upload-wrapper::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(241, 180, 52, 0.1), transparent);
+      transform: rotate(45deg);
+      transition: all 0.5s ease;
+      opacity: 0;
+    }
+
+    .file-upload-wrapper:hover::before {
+      opacity: 1;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+      100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+    }
+
+    .file-input {
+      position: absolute;
+      opacity: 0;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      cursor: pointer;
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 16px;
+      background: rgba(241, 180, 52, 0.2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .upload-text {
+      font-size: 18px;
+      font-weight: 600;
+      color: #051C38;
+      margin-bottom: 4px;
+    }
+
+    .upload-hint {
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .file-selected {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: #ffffff;
+      border: 1.5px solid #10b981;
+      border-radius: 10px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .file-selected.show {
+      display: flex;
+    }
+
+    .files-list {
+      margin-top: 10px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .files-list.show {
+      display: flex;
+    }
+
+    .file-item {
+      padding: 8px 12px;
+      background: #ffffff;
+      border: 1.5px solid #10b981;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+    }
+
+    /* Compact version for side-by-side */
+    .file-upload-compact + .file-selected {
+      margin-top: 10px;
+      padding: 8px 12px;
+    }
+
+    .file-upload-compact + .file-selected .file-name {
+      font-size: 13px;
+    }
+
+    .file-upload-compact + .file-selected .file-size {
+      font-size: 12px;
+    }
+
+    .file-upload-compact + .file-selected .file-icon {
+      font-size: 16px;
+    }
+
+    .file-icon {
+      font-size: 20px;
+      color: rgb(241, 180, 52);
+    }
+
+    .file-details {
+      flex: 1;
+    }
+
+    .file-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 2px;
+    }
+
+    .file-size {
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    /* Submit Button */
+    .btn-primary {
+      width: 100%;
+      padding: 18px 40px;
+      background: linear-gradient(135deg, #051C38, #0d2a4a);
+      color: white;
+      border: none;
+      border-radius: 25px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    .btn-primary:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(5, 28, 56, 0.3);
+    }
+
+    .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-icon {
+      font-size: 18px;
+    }
+
+    /* Alerts */
+    .alert {
+      margin-top: 24px;
+      padding: 20px;
+      border-radius: 12px;
+      border: 2px solid;
+      display: none;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .alert.show {
+      display: block;
+    }
+
+    .alert-success {
+      background: #f0fdf4;
+      border-color: #10b981;
+      color: #065f46;
+    }
+
+    .alert-error {
+      background: #fef2f2;
+      border-color: #ef4444;
+      color: #991b1b;
+    }
+
+    .alert-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ======================================================================
+       RESUME INFORMATION (OCR) — Azure AI Document Intelligence
+       TEMPORARY verification panel shown below the Generate Score results.
+       Entirely self-contained: no existing rule is modified, so deleting this
+       block plus the matching markup/script removes the feature cleanly.
+       ====================================================================== */
+    .ocr-section {
+      margin-top: 24px;
+      display: none;
+    }
+
+    .ocr-section.show {
+      display: block;
+    }
+
+    .ocr-card {
+      border: 2px solid #e1e8ed;
+      border-radius: 12px;
+      background: #ffffff;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+
+    .ocr-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      background: #f8fafc;
+      cursor: pointer;
+      user-select: none;
+      font-size: 14px;
+      font-weight: 600;
+      color: #051C38;
+    }
+
+    .ocr-card-header:hover { background: #eef2f7; }
+
+    .ocr-caret {
+      transition: transform 0.2s ease;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .ocr-card.open .ocr-caret { transform: rotate(90deg); }
+
+    .ocr-badge {
+      margin-left: auto;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: #e2e8f0;
+      color: #334155;
+      white-space: nowrap;
+    }
+
+    .ocr-badge.ocr-badge-azure { background: #dbeafe; color: #1e40af; }
+    .ocr-badge.ocr-badge-local { background: #fef3c7; color: #92400e; }
+
+    .ocr-card-body {
+      display: none;
+      padding: 4px 18px 18px;
+    }
+
+    .ocr-card.open .ocr-card-body { display: block; }
+
+    .ocr-note {
+      margin: 12px 0;
+      padding: 10px 12px;
+      border-left: 4px solid #d97706;
+      background: #fffbeb;
+      border-radius: 4px;
+      font-size: 12.5px;
+      color: #92400e;
+    }
+
+    .ocr-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+
+    .ocr-table th,
+    .ocr-table td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid #edf2f7;
+      vertical-align: top;
+    }
+
+    .ocr-table th {
+      width: 190px;
+      color: #475569;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .ocr-table td { color: #051C38; word-break: break-word; }
+
+    .ocr-not-found { color: #94a3b8; font-style: italic; }
+
+    .ocr-chip {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 3px 9px;
+      border-radius: 20px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      font-size: 12px;
+      color: #334155;
+    }
+
+    .ocr-list { margin: 0; padding-left: 18px; }
+    .ocr-list li { margin-bottom: 4px; }
+
+    .ocr-subhead {
+      margin: 18px 0 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: #051C38;
+    }
+
+    .ocr-raw {
+      margin-top: 10px;
+      max-height: 320px;
+      overflow: auto;
+      padding: 12px 14px;
+      background: #0f172a;
+      color: #e2e8f0;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .link-container {
+      margin: 16px 0;
+      padding: 14px 16px;
+      background: #ffffff;
+      border: 2px solid #e1e8ed;
+      border-radius: 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      word-break: break-all;
+      color: #051C38;
+      font-weight: 600;
+    }
+
+    .btn-copy {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, rgb(241, 180, 52), #ffd700);
+      color: #051C38;
+      border: none;
+      border-radius: 25px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-copy:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(241, 180, 52, 0.3);
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #ffffff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+      .sidebar {
+        display: none;
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 24px;
+      }
+
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+      }
+
+      .user-info {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .content-card {
+        padding: 24px;
+      }
+    }
+
+    /* ── Email Tag Input ──────────────────────────────────────────── */
+.email-tag-shell {
+  min-height: 52px;
+  padding: 6px 10px;
+  border: 2px solid #e1e8ed;
+  border-radius: 10px;
+  background: white;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  cursor: text;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.email-tag-shell:focus-within {
+  border-color: rgb(241,180,52);
+  box-shadow: 0 0 0 3px rgba(241,180,52,0.12);
+}
+.email-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.email-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg,rgba(241,180,52,0.15),rgba(241,180,52,0.25));
+  border: 1.5px solid rgba(241,180,52,0.4);
+  color: #051C38;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 10px 4px 10px;
+  border-radius: 20px;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.email-tag-remove {
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: #92400e;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.email-tag-remove:hover { color: #ef4444; }
+.email-tag-text {
+  flex: 1;
+  min-width: 180px;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1a1a1a;
+  background: transparent;
+  padding: 4px 2px;
+}
+.email-tag-text::placeholder { color: #9ca3af; }
+
+/* ── Suggestion Dropdown ─────────────────────────────────────── */
+.email-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e1e8ed;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+  z-index: 600;
+  overflow: hidden;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.email-suggestions::-webkit-scrollbar { width: 4px; }
+.email-suggestions::-webkit-scrollbar-thumb { background:#e1e8ed; border-radius:4px; }
+
+.suggestion-group-header {
+  padding: 8px 14px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #9ca3af;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f2f5;
+}
+.suggestion-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid #f9fafb;
+}
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item:hover { background: #fdf8ee; }
+.suggestion-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #051C38;
+  margin-bottom: 3px;
+}
+.suggestion-item-emails {
+  font-size: 12px;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.suggestion-item-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: linear-gradient(135deg,rgb(241,180,52),#ffd700);
+  color: #051C38;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.suggestion-new-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  color: #10b981;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.suggestion-new-row:hover { background: #f0fdf4; }
+.suggestion-empty {
+  padding: 18px 14px;
+  text-align: center;
+  font-size: 13px;
+  color: #9ca3af;
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <aside class="sidebar">
+      <div class="logo-section">
+        <div class="logo">
+  <img src="/AI_Text_1.jpg" alt="InterviewAI Logo" class="logo-icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+  <div class="logo-icon" style="display: none;">IA</div>
+  <div class="logo-text-container">
+    <div class="logo-text">VetAI</div>
+    <div class="logo-subtitle">AI Powered Interviews</div>
+  </div>
+</div>
+      </div>
+
+      <nav>
+        <div class="nav-section">
+          <div class="nav-title">Main</div>
+          <div class="nav-item active">
+            <span class="nav-icon">➕</span>
+            <span>Create Interview</span>
+          </div>
+<div class="nav-item" onclick="window.location.href='/api/dashboard'">
+  <span class="nav-icon">📊</span>
+  <span>Dashboard</span>
+</div>
+<div class="nav-item" onclick="window.location.href='/api/analytics'">
+  <span class="nav-icon">📈</span>
+  <span>Analytics</span>
+</div>
+          <div class="nav-item">
+            <span class="nav-icon">📋</span>
+            <span>All Interviews</span>
+          </div>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-title">Settings</div>
+          <div class="nav-item">
+            <span class="nav-icon">⚙️</span>
+            <span>Configuration</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-icon">🔗</span>
+            <span>Webhooks</span>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <div class="header">
+  <div class="header-left">
+    <h1>Create New Interview</h1>
+    <p class="page-subtitle">Set up an AI-powered interview session for your candidate</p>
+  </div>
+  <div class="header-right">
+    <div class="user-info">
+      <div class="user-avatar">U</div>
+      <span>User</span>
+    </div>
+    <img src="/Systech_Logo1.png" alt="Company Logo" class="company-logo" onerror="this.style.display='none'">
+  </div>
+</div>
+
+      <div class="content-card">
+        <form id="uploadForm" enctype="multipart/form-data">
+          <div class="form-section">
+            <h3>📋 Interview Details</h3>
+            <div class="grid-2">
+  <div class="form-group">
+    <label class="form-label">Job Title</label>
+    <input
+      type="text"
+      id="jobTitle"
+      class="form-input"
+      placeholder="e.g., Senior Full Stack Developer"
+      autocomplete="off"
+      required
+    >
+  </div>
+  <!-- To Emails — smart tag-input with job-title-aware dropdown -->
+  <div class="form-group" style="position:relative;">
+    <label class="form-label">
+      To Email(s)
+      <span style="font-weight:400;color:#9ca3af;font-size:12px;margin-left:6px;">
+        Press <kbd style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:4px;padding:1px 5px;font-size:11px;">Enter</kbd>
+        or <kbd style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:4px;padding:1px 5px;font-size:11px;">,</kbd> to add
+      </span>
+    </label>
+
+    <!-- Hidden field that holds the final CSV value sent to the server -->
+    <input type="hidden" id="toEmails" name="toEmails">
+
+    <!-- Tag input shell -->
+    <div class="email-tag-shell" id="emailTagShell">
+      <div class="email-tags-row" id="emailTagsRow"></div>
+      <input
+        type="text"
+        id="emailTagInput"
+        class="email-tag-text"
+        placeholder="Type or search an email…"
+        autocomplete="off"
+      >
+    </div>
+
+    <!-- Suggestion dropdown -->
+    <div class="email-suggestions" id="emailSuggestions" style="display:none;"></div>
+  </div>
+</div>
+          </div>
+
+          <!-- File Uploads Section -->
+          <div class="form-section">
+            <h3>🔎 Document Uploads</h3>
+            <div class="grid-2">
+              <!-- Job Description PDF Upload (Left) -->
+              <div class="form-group">
+                <label class="form-label">Job Description (PDF)</label>
+                <div class="file-upload-wrapper file-upload-compact" id="jdUploadWrapper">
+                  <input
+                    type="file"
+                    id="jobDescriptionFile"
+                    class="file-input"
+                    accept=".pdf"
+                    required
+                  >
+                  <div class="upload-icon">📄</div>
+                  <div class="upload-text">Upload Job Description</div>
+                  <div class="upload-hint">PDF only (Max 10MB)</div>
+                </div>
+                <div id="jdFileSelected" class="file-selected">
+                  <span class="file-icon">✅</span>
+                  <div class="file-details">
+                    <div class="file-name" id="jdFileName"></div>
+                    <div class="file-size" id="jdFileSize"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Resume Upload (Right) - Multiple Files -->
+              <div class="form-group">
+  <label class="form-label">Candidate Resumes (Maximum 5 files)</label>  <!-- UPDATE THIS LINE -->
+  <div class="file-upload-wrapper file-upload-compact" id="resumeUploadWrapper">
+    <input
+      type="file"
+      id="resumeFiles"
+      class="file-input"
+      accept=".pdf"
+      multiple
+      required
+    >
+    <div class="upload-icon">📂</div>
+    <div class="upload-text">Upload Resumes</div>
+    <div class="upload-hint">PDF only, Max 5 files (10MB each)</div>  <!-- UPDATE THIS LINE -->
+  </div>
+  <div id="resumeFilesList" class="files-list"></div>
+</div>
+                <div id="resumeFilesList" class="files-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submitBtn">
+            <span class="btn-icon">🚀</span>
+            <span>Generate Score</span>
+          </button>
+        </form>
+
+        <div id="successAlert" class="alert alert-success">
+          <div class="alert-title">
+            <span>✅</span>
+            Interview Created Successfully
+          </div>
+          <p style="margin-bottom: 12px; font-size: 14px;">Share this link with your candidate:</p>
+          <div class="link-container" id="linkDisplay"></div>
+          <button class="btn-copy" onclick="copySpecificLink()">
+            <span>📋</span>
+            <span>Copy Link</span>
+          </button>
+        </div>
+
+        <div id="errorAlert" class="alert alert-error"></div>
+
+        <!-- ================================================================
+             RESUME INFORMATION (OCR)  —  Azure AI Document Intelligence
+             TEMPORARY verification panel. Rendered BELOW the existing Generate
+             Score results; nothing above it is changed. Populated by
+             renderOcrPanels() from the `ocr` block each session returns.
+             ================================================================ -->
+        <div id="ocrSection" class="ocr-section"></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const jdFileInput = document.getElementById('jobDescriptionFile');
+    const resumeFilesInput = document.getElementById('resumeFiles');
+    const jdUploadWrapper = document.getElementById('jdUploadWrapper');
+    const resumeUploadWrapper = document.getElementById('resumeUploadWrapper');
+    const jdFileSelected = document.getElementById('jdFileSelected');
+    const jdFileName = document.getElementById('jdFileName');
+    const jdFileSize = document.getElementById('jdFileSize');
+    const resumeFilesList = document.getElementById('resumeFilesList');
+    const submitBtn = document.getElementById('submitBtn');
+    const successAlert = document.getElementById('successAlert');
+    const errorAlert = document.getElementById('errorAlert');
+    const linkDisplay = document.getElementById('linkDisplay');
+    // NEW: container for the temporary "Resume Information (OCR)" panels.
+    const ocrSection = document.getElementById('ocrSection');
+
+    // Job Description file handler
+    jdFileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        // Validate PDF
+        if (file.type !== 'application/pdf') {
+          errorAlert.innerHTML = '<div class="alert-title"><span>⚠️</span>Invalid File Type</div>' +
+                                 '<p style="font-size: 14px;">Please upload a PDF file for the job description.</p>';
+          errorAlert.classList.add('show');
+          jdFileInput.value = '';
+          jdFileSelected.classList.remove('show');
+          jdUploadWrapper.classList.remove('has-file');
+          return;
+        }
+
+        jdFileName.textContent = file.name;
+        jdFileSize.textContent = (file.size / 1024).toFixed(1) + ' KB';
+        jdFileSelected.classList.add('show');
+        jdUploadWrapper.classList.add('has-file');
+        errorAlert.classList.remove('show');
+      }
+    });
+
+    // Resume files handler (multiple)
+    resumeFilesInput.addEventListener('change', (e) => {
+      const files = Array.from(e.target.files);
+      resumeFilesList.innerHTML = '';
+
+      if (files.length > 5) {
+    errorAlert.innerHTML = '<div class="alert-title"><span>⚠️</span>Too Many Files</div>' +
+                           '<p style="font-size: 14px;">Maximum 5 resume files allowed. You selected ' + files.length + ' files.</p>';
+    errorAlert.classList.add('show');
+    resumeFilesInput.value = '';
+    resumeFilesList.classList.remove('show');
+    resumeUploadWrapper.classList.remove('has-file');
+    return;
+  }
+      
+      if (files.length > 0) {
+        let allValid = true;
+        
+        files.forEach((file, index) => {
+          // Validate PDF
+          if (file.type !== 'application/pdf') {
+            errorAlert.innerHTML = '<div class="alert-title"><span>⚠️</span>Invalid File Type</div>' +
+                                   '<p style="font-size: 14px;">All resume files must be PDF format.</p>';
+            errorAlert.classList.add('show');
+            resumeFilesInput.value = '';
+            resumeFilesList.classList.remove('show');
+            resumeUploadWrapper.classList.remove('has-file');
+            allValid = false;
+            return;
+          }
+
+          const fileItem = document.createElement('div');
+          fileItem.className = 'file-item';
+          fileItem.innerHTML = `
+            <span class="file-icon">✅</span>
+            <div class="file-details">
+              <div class="file-name">${file.name}</div>
+              <div class="file-size">${(file.size / 1024).toFixed(1)} KB</div>
+            </div>
+          `;
+          resumeFilesList.appendChild(fileItem);
+        });
+
+        if (allValid) {
+          resumeFilesList.classList.add('show');
+          resumeUploadWrapper.classList.add('has-file');
+          errorAlert.classList.remove('show');
+        }
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData();
+  formData.append('jobTitle', document.getElementById('jobTitle').value);
+  formData.append('toEmails', document.getElementById('toEmails').value);
+  formData.append('jobDescription', jdFileInput.files[0]);
+  
+  // Append multiple resume files
+  const resumeFiles = resumeFilesInput.files;
+  for (let i = 0; i < resumeFiles.length; i++) {
+    formData.append('resumes', resumeFiles[i]);
+  }
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<div class="spinner"></div><span>Generating Score...</span>';
+  successAlert.classList.remove('show');
+  errorAlert.classList.remove('show');
+  clearOcrPanels();   // NEW: drop the previous run's OCR panels
+  try {
+    const response = await fetch('/api/create-interview', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await response.json();
+    if (data.success && data.sessions) {
+      // Display multiple links
+      let linksHTML = '<p style="margin-bottom: 12px; font-size: 14px;">Share these links with your candidates:</p>';
+      
+data.sessions.forEach((session, index) => {
+  linksHTML += '<div style="margin-bottom: 15px;">' +
+    '<p style="font-weight: 600; margin-bottom: 5px; color: #051C38;">' +
+      (index + 1) + '. ' + session.resumeFileName +
+    '</p>' +
+    '<div class="link-container">' + session.interviewUrl + '</div>' +
+    '<button class="btn-copy" onclick="copySpecificLink(&quot;' + session.interviewUrl + '&quot;, this)">' +
+      '<span>📋</span>' +
+      '<span>Copy Link</span>' +
+    '</button>' +
+  '</div>';
+});
+      
+      // Surface resumes the backend rejected. Previously the page showed only
+      // the success count, so uploading 5 resumes and getting 2 interviews back
+      // looked like a success — there was no way to learn that 3 were dropped
+      // (scanned PDFs, oversized files) or which ones.
+      var skippedHTML = '';
+      if (data.skipped && data.skipped.length) {
+        skippedHTML = '<div style="margin-top:16px; padding:12px; border-left:4px solid #d97706; background:#fffbeb; border-radius:4px;">' +
+          '<p style="font-weight:600; color:#92400e; margin-bottom:8px;">⚠️ ' + data.skipped.length +
+          ' resume' + (data.skipped.length > 1 ? 's were' : ' was') + ' skipped — no interview created for ' +
+          (data.skipped.length > 1 ? 'these' : 'this') + ':</p><ul style="margin:0 0 0 18px; color:#92400e; font-size:13px;">';
+        data.skipped.forEach(function (s) {
+          skippedHTML += '<li><strong>' + s.fileName + '</strong> — ' + s.reason + '</li>';
+        });
+        skippedHTML += '</ul></div>';
+      }
+
+      successAlert.innerHTML = '<div class="alert-title">' +
+        '<span>✅</span>' +
+        data.count + ' Interview' + (data.count > 1 ? 's' : '') + ' Created Successfully' +
+        '</div>' +
+        linksHTML + skippedHTML;
+      
+      successAlert.classList.add('show');
+
+      // NEW: render the OCR verification panels below the results. Wrapped so a
+      // rendering slip can never break the interview-link flow above it.
+      try {
+        renderOcrPanels(data.sessions);
+      } catch (ocrErr) {
+        console.error('Could not render the OCR panel:', ocrErr);
+      }
+
+      form.reset();
+      window.resetEmailTags();
+      jdFileSelected.classList.remove('show');
+      resumeFilesList.classList.remove('show');
+      jdUploadWrapper.classList.remove('has-file');
+      resumeUploadWrapper.classList.remove('has-file');
+      successAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      
+      // Auto-refresh the candidate dashboard table after 3 seconds to let N8N sync
+      setTimeout(() => {
+        loadCandidates();
+      }, 3000);
+    } else {
+      // The backend now returns 400 with a per-file `skipped` list when EVERY
+      // resume was rejected. List the reasons instead of a bare error line, so
+      // the cause (usually a scanned PDF that needs OCR) is actionable.
+      var failDetail = '';
+      if (data.skipped && data.skipped.length) {
+        failDetail = '<ul style="margin:8px 0 0 18px; font-size:13px;">';
+        data.skipped.forEach(function (s) {
+          failDetail += '<li><strong>' + s.fileName + '</strong> — ' + s.reason + '</li>';
+        });
+        failDetail += '</ul>';
+      }
+      errorAlert.innerHTML = '<div class="alert-title"><span>⚠️</span>Error</div>' +
+                             '<p style="font-size: 14px;">' + (data.error || 'Unknown error occurred') + '</p>' +
+                             failDetail;
+      errorAlert.classList.add('show');
+    }
+  } catch (err) {
+    errorAlert.innerHTML = '<div class="alert-title"><span>⚠️</span>Network Error</div>' +
+                           '<p style="font-size: 14px;">' + err.message + '</p>';
+    errorAlert.classList.add('show');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<span class="btn-icon">🚀</span><span>Generate Score</span>';
+  }
+});
+
+// ==========================================================================
+// RESUME INFORMATION (OCR) PANEL  —  Azure AI Document Intelligence
+// --------------------------------------------------------------------------
+// TEMPORARY: this block exists only to verify that OCR extraction is working.
+// It reads the `ocr` object the backend adds to each created session and renders
+// a collapsible card per résumé beneath the Generate Score results. It touches
+// no other part of the page, so removing this function, clearOcrPanels(), the
+// `#ocrSection` div and the `.ocr-*` CSS removes the feature completely.
+// ==========================================================================
+
+// Field order and labels, mirroring the standalone Document Intelligence app.
+//   scalar — plain value
+//   chips  — short list values rendered as pills (skills, companies)
+//   list   — one entry per line (education, projects)
+var OCR_FIELDS = [
+  ['Full Name',         'name',            'scalar'],
+  ['Email Address',     'email',           'scalar'],
+  ['Phone Number',      'phone',           'scalar'],
+  ['Current Location',  'location',        'scalar'],
+  ['LinkedIn Profile',  'linkedin',        'scalar'],
+  ['GitHub Profile',    'github',          'scalar'],
+  ['Portfolio Website', 'portfolio',       'scalar'],
+  ['Current Job Title', 'jobTitle',        'scalar'],
+  ['Total Experience',  'experience',      'scalar'],
+  ['Skills',            'skills',          'chips'],
+  ['Technical Skills',  'technicalSkills', 'chips'],
+  ['Soft Skills',       'softSkills',      'chips'],
+  ['Education',         'education',       'list'],
+  ['Certifications',    'certifications',  'list'],
+  ['Projects',          'projects',        'list'],
+  ['Companies Worked',  'companies',       'chips'],
+  ['Designation(s)',    'designations',    'chips'],
+  ['Languages Known',   'languages',       'chips']
+];
+
+function ocrEscape(value) {
+  return String(value === null || value === undefined ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function ocrNotFound() {
+  return '<span class="ocr-not-found">Not Found</span>';
+}
+
+// Render one field's value according to its display style.
+function ocrRenderValue(value, style) {
+  if (value === null || value === undefined || value === '') return ocrNotFound();
+  if (Array.isArray(value)) {
+    if (!value.length) return ocrNotFound();
+    if (style === 'chips') {
+      return value.map(function (item) {
+        return '<span class="ocr-chip">' + ocrEscape(item) + '</span>';
+      }).join('');
+    }
+    return '<ul class="ocr-list">' + value.map(function (item) {
+      return '<li>' + ocrEscape(item) + '</li>';
+    }).join('') + '</ul>';
+  }
+  return ocrEscape(value);
+}
+
+// Build the collapsible card for a single résumé.
+function ocrBuildCard(session, index) {
+  var ocr = session.ocr || {};
+  var info = ocr.resumeInfo || {};
+  var stats = ocr.stats || {};
+  var docInfo = ocr.documentInfo || null;
+  var fromAzure = ocr.source === 'azure-document-intelligence';
+
+  var rows = OCR_FIELDS.map(function (field) {
+    return '<tr><th>' + field[0] + '</th><td>' +
+           ocrRenderValue(info[field[1]], field[2]) + '</td></tr>';
+  }).join('');
+
+  // Anything the operator should know: a fallback to the local parser, a skipped
+  // add-on feature, an Azure error. Silence here means OCR ran cleanly.
+  var notes = '';
+  if (ocr.error) {
+    notes += '<div class="ocr-note"><strong>Azure OCR failed:</strong> ' + ocrEscape(ocr.error) +
+             ' The local parser was used instead, so scoring still ran.</div>';
+  }
+  (ocr.warnings || []).forEach(function (warning) {
+    notes += '<div class="ocr-note">' + ocrEscape(warning) + '</div>';
+  });
+
+  var meta = '';
+  if (docInfo) {
+    meta = '<table class="ocr-table">' +
+      '<tr><th>Extraction Source</th><td>' +
+        (fromAzure ? 'Azure AI Document Intelligence' : 'Local parser (fallback)') + '</td></tr>' +
+      '<tr><th>Model</th><td>' + ocrEscape(docInfo.model || '—') + '</td></tr>' +
+      '<tr><th>Pages</th><td>' + ocrEscape(docInfo.pages || 0) + '</td></tr>' +
+      '<tr><th>Processing Time</th><td>' + ocrEscape(docInfo.processingTimeSeconds || 0) + 's</td></tr>' +
+      '<tr><th>Characters Extracted</th><td>' + ocrEscape(ocr.charactersExtracted || 0) + '</td></tr>' +
+      '</table>';
+  }
+
+  var raw = '';
+  if (ocr.rawText) {
+    raw = '<p class="ocr-subhead">Raw OCR Text' +
+          (ocr.rawTextTruncated ? ' (truncated for display)' : '') + '</p>' +
+          '<div class="ocr-raw">' + ocrEscape(ocr.rawText) + '</div>';
+  }
+
+  var badgeClass = fromAzure ? 'ocr-badge-azure' : 'ocr-badge-local';
+  var badgeText = fromAzure ? 'Azure OCR' : 'Local fallback';
+  var detected = (stats.fieldsDetected || 0) + '/' + (stats.totalFields || OCR_FIELDS.length) + ' fields';
+
+  // The first card starts expanded so the result is visible without a click.
+  return '<div class="ocr-card' + (index === 0 ? ' open' : '') + '">' +
+    '<div class="ocr-card-header" onclick="toggleOcrCard(this)">' +
+      '<span class="ocr-caret">▶</span>' +
+      '<span>🔎 Resume Information (OCR) — ' + ocrEscape(session.resumeFileName || ('Resume ' + (index + 1))) + '</span>' +
+      '<span class="ocr-badge ' + badgeClass + '">' + badgeText + ' · ' + detected + '</span>' +
+    '</div>' +
+    '<div class="ocr-card-body">' +
+      notes +
+      '<table class="ocr-table">' + rows + '</table>' +
+      (meta ? '<p class="ocr-subhead">Document Details</p>' + meta : '') +
+      raw +
+    '</div>' +
+  '</div>';
+}
+
+function toggleOcrCard(headerElement) {
+  headerElement.parentElement.classList.toggle('open');
+}
+
+function clearOcrPanels() {
+  if (!ocrSection) return;
+  ocrSection.innerHTML = '';
+  ocrSection.classList.remove('show');
+}
+
+function renderOcrPanels(sessions) {
+  if (!ocrSection) return;
+  var withOcr = (sessions || []).filter(function (session) { return session && session.ocr; });
+  if (!withOcr.length) { clearOcrPanels(); return; }
+
+  ocrSection.innerHTML = withOcr.map(ocrBuildCard).join('');
+  ocrSection.classList.add('show');
+}
+
+function copySpecificLink(url, btnElement) {
+  navigator.clipboard.writeText(url).then(() => {
+    const originalHTML = btnElement.innerHTML;
+    btnElement.innerHTML = '<span>✅</span><span>Copied!</span>';
+    btnElement.style.background = '#10b981';
+    btnElement.style.color = '#ffffff';
+    setTimeout(() => {
+      btnElement.innerHTML = originalHTML;
+      btnElement.style.background = '';
+      btnElement.style.color = '';
+    }, 2000);
+  });
+}
+
+    // Sidebar navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', function() {
+        document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+    // ── Email Tag Input Logic ──────────────────────────────────────────────────
+(function () {
+  const shell      = document.getElementById('emailTagShell');
+  const tagsRow    = document.getElementById('emailTagsRow');
+  const textInput  = document.getElementById('emailTagInput');
+  const hidden     = document.getElementById('toEmails');
+  const dropdown   = document.getElementById('emailSuggestions');
+  const jobTitleEl = document.getElementById('jobTitle');
+
+  let tags         = [];
+  let fetchTimer   = null;
+  let dropdownOpen = false;
+
+  shell.addEventListener('click', () => textInput.focus());
+
+  function syncHidden() {
+    hidden.value = tags.join(', ');
+  }
+
+  function renderTags() {
+    tagsRow.innerHTML = tags.map((email, i) => `
+      <span class="email-tag" title="${email}">
+        ${email.length > 28 ? email.slice(0, 26) + '…' : email}
+        <span class="email-tag-remove" data-i="${i}" title="Remove">×</span>
+      </span>
+    `).join('');
+    tagsRow.querySelectorAll('.email-tag-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        tags.splice(Number(btn.dataset.i), 1);
+        renderTags();
+        syncHidden();
+      });
+    });
+    syncHidden();
+  }
+
+  function addEmails(raw) {
+    const parts = raw.split(',').map(s => s.trim()).filter(Boolean);
+    parts.forEach(email => {
+      if (email && !tags.includes(email)) tags.push(email);
+    });
+    renderTags();
+    textInput.value = '';
+    syncHidden();
+  }
+
+  textInput.addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ',') && textInput.value.trim()) {
+      e.preventDefault();
+      addEmails(textInput.value);
+      closeDropdown();
+    }
+    if (e.key === 'Backspace' && !textInput.value && tags.length) {
+      tags.pop();
+      renderTags();
+    }
+    if (e.key === 'Escape') closeDropdown();
+  });
+
+  textInput.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData).getData('text');
+    addEmails(pasted.replace(/[;\n]/g, ','));
+  });
+
+  function openDropdown()  { dropdown.style.display = 'block'; dropdownOpen = true;  }
+  function closeDropdown() { dropdown.style.display = 'none';  dropdownOpen = false; }
+
+  async function fetchConfigs(q) {
+    try {
+      const url = '/api/job-email-configs' + (q ? '?q=' + encodeURIComponent(q) : '');
+      const res  = await fetch(url);
+      const data = await res.json();
+      return data.success ? data.configs : [];
+    } catch { return []; }
+  }
+
+  function renderDropdown(configs, typed) {
+    if (!configs.length && !typed) {
+      dropdown.innerHTML = '<div class="suggestion-empty">No saved email configs yet.</div>';
+      openDropdown();
+      return;
+    }
+
+    let html = '';
+
+    if (configs.length) {
+      html += '<div class="suggestion-group-header">Saved job-title configs</div>';
+      configs.forEach(cfg => {
+        const emailCount = cfg.emails.split(',').filter(Boolean).length;
+        html += `
+          <div class="suggestion-item" data-emails="${escapeAttr(cfg.emails)}" data-jobtitle="${escapeAttr(cfg.jobtitle)}">
+            <div class="suggestion-item-title">
+              ${escapeHtml(cfg.jobtitle)}
+              <span class="suggestion-item-badge">${emailCount} email${emailCount !== 1 ? 's' : ''}</span>
+            </div>
+            <div class="suggestion-item-emails">${escapeHtml(cfg.emails)}</div>
+          </div>`;
+      });
+    }
+
+    if (typed && typed.includes('@')) {
+      html += `
+        <div class="suggestion-new-row" data-new-email="${escapeAttr(typed)}">
+          <span style="font-size:18px;">＋</span>
+          Add "<strong>${escapeHtml(typed)}</strong>" as a new email
+        </div>`;
+    } else if (typed) {
+      html += '<div class="suggestion-empty" style="padding:10px 14px;">Press <strong>Enter</strong> or <strong>,</strong> to add this email.</div>';
+    }
+
+    if (!html) { closeDropdown(); return; }
+    dropdown.innerHTML = html;
+    openDropdown();
+
+    dropdown.querySelectorAll('.suggestion-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const jobtitle = item.dataset.jobtitle;
+        const emails   = item.dataset.emails;
+        if (jobTitleEl && !jobTitleEl.value.trim()) jobTitleEl.value = jobtitle;
+        tags = [];
+        addEmails(emails);
+        textInput.value = '';
+        closeDropdown();
+      });
+    });
+    dropdown.querySelectorAll('.suggestion-new-row').forEach(item => {
+      item.addEventListener('click', () => {
+        addEmails(item.dataset.newEmail);
+        closeDropdown();
+      });
+    });
+  }
+
+  textInput.addEventListener('input', () => {
+    const val = textInput.value.trim();
+    clearTimeout(fetchTimer);
+    fetchTimer = setTimeout(async () => {
+      const jobQuery = jobTitleEl.value.trim() || val;
+      const configs  = await fetchConfigs(jobQuery);
+      renderDropdown(configs, val);
+    }, 180);
+  });
+
+  if (jobTitleEl) {
+    jobTitleEl.addEventListener('input', () => {
+      clearTimeout(fetchTimer);
+      fetchTimer = setTimeout(async () => {
+        const q       = jobTitleEl.value.trim();
+        const configs = await fetchConfigs(q);
+        if (configs.length === 1 && !tags.length) {
+          renderDropdown(configs, textInput.value.trim());
+        } else if (configs.length > 1 || (configs.length && document.activeElement === textInput)) {
+          renderDropdown(configs, textInput.value.trim());
+        }
+      }, 300);
+    });
+  }
+
+  textInput.addEventListener('focus', async () => {
+    const q       = jobTitleEl ? jobTitleEl.value.trim() : '';
+    const configs = await fetchConfigs(q);
+    renderDropdown(configs, textInput.value.trim());
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!shell.contains(e.target) && !dropdown.contains(e.target)) closeDropdown();
+  });
+
+  function escapeHtml(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function escapeAttr(s) {
+    return (s || '').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  window.resetEmailTags = function () {
+    tags = [];
+    renderTags();
+    textInput.value = '';
+    closeDropdown();
+  };
+})();
+  </script>
+</body>
+</html>
