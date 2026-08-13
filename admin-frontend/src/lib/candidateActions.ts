@@ -2,8 +2,11 @@
 // verbatim from dashboard.html's createInterview(index): fire
 // webhook/createinterview, then reset the 48h window via the existing
 // backend route. Two-step sequence preserved exactly (plan section 6: do
-// not collapse this into one call).
+// not collapse this into one call) - the Phase 5 proxy path preserves the
+// same two-step sequence server-side (candidatesFeedController.js), just
+// moved off the client, per plan section 6.
 import type { RawCandidate } from './candidates';
+import { USE_CANDIDATES_PROXY } from './featureFlags';
 
 export interface ScheduleResult {
   sessionid: string;
@@ -19,6 +22,20 @@ async function scheduleOne(candidate: RawCandidate): Promise<ScheduleResult> {
   }
 
   try {
+    if (USE_CANDIDATES_PROXY) {
+      const res = await fetch(`/api/candidates/${sessionid}/create-interview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidatename: candidate.candidatename,
+          candidateemail: candidate.candidateemail,
+          jobtitle: candidate.jobtitle,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to create interview');
+      return { sessionid, candidatename: candidate.candidatename, ok: true };
+    }
+
     const n8nRes = await fetch('https://n8n.systechusa.com/webhook/createinterview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -77,10 +94,16 @@ export async function scheduleSelected(
 // confirming with whoever owns the n8n workflow before relying on this in
 // production.
 export async function setCandidateStatus(sessionid: string, status: string): Promise<void> {
-  const res = await fetch('https://n8n.systechusa.com/webhook/vetaiupdate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionid, status }),
-  });
+  const res = USE_CANDIDATES_PROXY
+    ? await fetch(`/api/candidates/${sessionid}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+    : await fetch('https://n8n.systechusa.com/webhook/vetaiupdate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionid, status }),
+      });
   if (!res.ok) throw new Error('Failed to update status');
 }

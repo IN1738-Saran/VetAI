@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, createRoutesFromElements } from 'react-router-dom';
 import { Sparkles, Mail, FileText, Building2, UserCircle } from 'lucide-react';
 import { Shell } from '@/shell/Shell';
@@ -6,8 +7,14 @@ import { InterviewsView } from '@/views/InterviewsView';
 import { CandidatesView } from '@/views/CandidatesView';
 import { CandidateProfileView } from '@/views/CandidateProfileView';
 import { JobLibraryView } from '@/views/JobLibraryView';
-import { AnalyticsView } from '@/views/AnalyticsView';
 import { ComingSoonView } from '@/views/ComingSoonView';
+
+// Recharts (via Donut/LineChartCard/HorizontalBarChart) is only pulled into
+// its own chunk when Analytics is actually visited, per plan section 13
+// ("chart libraries should be lazy-loaded on the Analytics view").
+const AnalyticsView = lazy(() =>
+  import('@/views/AnalyticsView').then((m) => ({ default: m.AnalyticsView }))
+);
 
 // Built with createRoutesFromElements (not the plain <Routes>/<Route> JSX
 // API) because Shell.tsx reads the active route's title/subtitle via
@@ -44,7 +51,11 @@ export const routes = createRoutesFromElements(
     />
     <Route
       path="/analytics"
-      element={<AnalyticsView />}
+      element={
+        <Suspense fallback={<div className="p-8 text-[13px] text-ink-muted">Loading analytics...</div>}>
+          <AnalyticsView />
+        </Suspense>
+      }
       handle={{ title: 'Analytics', subtitle: 'Hiring performance' }}
     />
 

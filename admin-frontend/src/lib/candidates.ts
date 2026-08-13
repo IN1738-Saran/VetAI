@@ -5,9 +5,12 @@
 // consumer via useCandidates() below, instead of each screen re-fetching
 // independently as dashboard.html and analytics.html do today).
 //
-// If the optional Phase 5 proxy (GET /api/candidates) is ever built, only
-// fetchCandidates() needs to change - every consumer already goes through
-// useCandidates().
+// Phase 5 added an optional backend proxy (GET /api/candidates) behind
+// VITE_USE_CANDIDATES_PROXY, default off - see featureFlags.ts. Only
+// fetchCandidates() branches on it; every consumer still goes through
+// useCandidates() unchanged.
+import { USE_CANDIDATES_PROXY } from './featureFlags';
+
 const DATAENTRY_URL = 'https://n8n.systechusa.com/webhook/dataentry';
 
 // A live Phase 3 fetch against production (2026-08-13, 2,903 records)
@@ -69,6 +72,13 @@ function unwrapCandidates(data: unknown): RawCandidate[] {
 }
 
 export async function fetchCandidates(): Promise<RawCandidate[]> {
+  if (USE_CANDIDATES_PROXY) {
+    const res = await fetch('/api/candidates');
+    if (!res.ok) throw new Error(`Candidates feed returned ${res.status} ${res.statusText}`);
+    const { candidates } = (await res.json()) as { candidates: RawCandidate[] };
+    return candidates;
+  }
+
   const res = await fetch(`${DATAENTRY_URL}?ts=${Date.now()}`, {
     method: 'POST',
     headers: {

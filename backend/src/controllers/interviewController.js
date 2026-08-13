@@ -829,51 +829,64 @@ export async function completeInterview(req, res) {
 }
 
 /**
+ * Core logic behind "update session dates" (resets the 48h interview
+ * window), factored out of the route handler below so the Phase 5
+ * candidates-feed proxy route can reuse it without duplicating this logic
+ * (plan Strict Constraint #7 explicitly permits extracting a reusable
+ * helper from an existing controller function - this is that extraction;
+ * updateSessionDates's own request/response behavior is unchanged).
+ */
+export async function resetSessionWindow(sessionId) {
+    let session = interviewSessions.get(sessionId);
+
+    if (!session) {
+        session = await loadSessionFromAzure(sessionId);
+        if (session) {
+            interviewSessions.set(sessionId, session);
+        }
+    }
+
+    if (!session) {
+        const notFound = new Error('Session not found');
+        notFound.statusCode = 404;
+        throw notFound;
+    }
+
+    // Set createdAt to now
+    const now = new Date();
+    session.createdAt = now.toISOString();
+
+    // Set expiresAt to 1 day from now at 11:59:59 PM
+    const expiryDate = new Date(now);
+    expiryDate.setDate(expiryDate.getDate() + 1);
+    expiryDate.setHours(23, 59, 59, 999);
+    session.expiresAt = expiryDate.toISOString();
+
+    // Update status if needed
+    session.status = 'pending';
+
+    // Save to both memory and Azure
+    interviewSessions.set(sessionId, session);
+    await updateSessionInAzure(sessionId, session);
+
+    console.log(`✅ Session ${sessionId} dates updated: createdAt=${session.createdAt}, expiresAt=${session.expiresAt}`);
+
+    return { createdAt: session.createdAt, expiresAt: session.expiresAt };
+}
+
+/**
  * UPDATE SESSION DATES (FOR DASHBOARD CREATE INTERVIEW)
  */
 export async function updateSessionDates(req, res) {
     const { sessionId } = req.params;
 
     try {
-        let session = interviewSessions.get(sessionId);
-
-        if (!session) {
-            session = await loadSessionFromAzure(sessionId);
-            if (session) {
-                interviewSessions.set(sessionId, session);
-            }
-        }
-
-        if (!session) {
+        const { createdAt, expiresAt } = await resetSessionWindow(sessionId);
+        res.json({ success: true, createdAt, expiresAt });
+    } catch (error) {
+        if (error.statusCode === 404) {
             return res.status(404).json({ error: 'Session not found' });
         }
-
-        // Set createdAt to now
-        const now = new Date();
-        session.createdAt = now.toISOString();
-
-        // Set expiresAt to 1 day from now at 11:59:59 PM
-        const expiryDate = new Date(now);
-        expiryDate.setDate(expiryDate.getDate() + 1);
-        expiryDate.setHours(23, 59, 59, 999);
-        session.expiresAt = expiryDate.toISOString();
-
-        // Update status if needed
-        session.status = 'pending';
-
-        // Save to both memory and Azure
-        interviewSessions.set(sessionId, session);
-        await updateSessionInAzure(sessionId, session);
-
-        console.log(`✅ Session ${sessionId} dates updated: createdAt=${session.createdAt}, expiresAt=${session.expiresAt}`);
-
-        res.json({
-            success: true,
-            createdAt: session.createdAt,
-            expiresAt: session.expiresAt
-        });
-
-    } catch (error) {
         console.error('❌ Error updating session dates:', error.message);
         res.status(500).json({ error: 'Failed to update session dates', details: error.message });
     }

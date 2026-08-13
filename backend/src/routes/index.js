@@ -8,6 +8,7 @@ import pageRoutes from './pageRoutes.js';
 import interviewRoutes from './interviewRoutes.js';
 import candidateRoutes from './candidateRoutes.js';
 import jobEmailRoutes from './jobEmailRoutes.js';
+import candidatesFeedRoutes from './candidatesFeedRoutes.js';
 
 const router = Router();
 
@@ -15,5 +16,7 @@ router.use(pageRoutes);
 router.use(interviewRoutes);
 router.use(candidateRoutes);
 router.use(jobEmailRoutes);
+// Phase 5 (optional, additive) - see candidatesFeedRoutes.js.
+router.use(candidatesFeedRoutes);
 
 export default router;

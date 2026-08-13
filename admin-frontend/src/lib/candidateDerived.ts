@@ -25,7 +25,7 @@ function isSameCalendarDay(a: Date, b: Date) {
 // Analytics reference screenshot's own caption under Interview outcomes,
 // now applicable because the real verdict enum (strong_fit/fit/borderline/
 // weak_fit/reject) confirms what "Fit or better" means.
-function isPassing(c: RawCandidate): boolean {
+export function isPassing(c: RawCandidate): boolean {
   const score = numericScore(c);
   const normalized = (c.verdict || '').trim().toLowerCase();
   return score !== null && score >= 70 && (normalized === 'strong_fit' || normalized === 'fit');
@@ -183,4 +183,62 @@ export function filterBySavedView(candidates: RawCandidate[], view: SavedViewId)
     default:
       return candidates;
   }
+}
+
+// -- Analytics-specific aggregations --------------------------------------
+
+export interface OutcomeBreakdown {
+  passed: number;
+  needsReview: number;
+  notPassed: number;
+}
+
+// Same "score 70+ and Fit or better" pass rule as computeDashboardKpis,
+// partitioned into exactly the 3 buckets the Analytics reference shows.
+export function computeOutcomes(candidates: RawCandidate[]): OutcomeBreakdown {
+  let passed = 0;
+  let needsReview = 0;
+  let notPassed = 0;
+  for (const c of candidates) {
+    if (isPassing(c)) passed++;
+    else if (normalizedVerdict(c) === 'borderline') needsReview++;
+    else notPassed++;
+  }
+  return { passed, needsReview, notPassed };
+}
+
+export interface SubmissionPoint {
+  label: string; // "2026-02"
+  value: number;
+}
+
+// Buckets by calendar month using createdat - the only real timestamp
+// proven to exist on every record. Sorted chronologically.
+export function submissionsOverTime(candidates: RawCandidate[]): SubmissionPoint[] {
+  const counts = new Map<string, number>();
+  for (const c of candidates) {
+    if (!c.createdat) continue;
+    const d = new Date(c.createdat);
+    if (Number.isNaN(d.getTime())) continue;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .sort(([a], [b]) => (a < b ? -1 : 1))
+    .map(([label, value]) => ({ label, value }));
+}
+
+export function filterByDateRange(
+  candidates: RawCandidate[],
+  from: string | null,
+  to: string | null
+): RawCandidate[] {
+  if (!from && !to) return candidates;
+  const fromTime = from ? new Date(from).getTime() : -Infinity;
+  const toTime = to ? new Date(to).getTime() + 24 * 60 * 60 * 1000 - 1 : Infinity; // inclusive end of day
+  return candidates.filter((c) => {
+    if (!c.createdat) return false;
+    const t = new Date(c.createdat).getTime();
+    return !Number.isNaN(t) && t >= fromTime && t <= toTime;
+  });
 }
