@@ -138,7 +138,7 @@ export function CandidateProfileView() {
             type="button"
             disabled={actionPending !== null}
             onClick={() => handleDecision('shortlist')}
-            className="rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:opacity-50"
+            className="rounded-lg bg-accent px-3 py-2 text-[13px] font-semibold text-navy hover:bg-accent-hover disabled:opacity-50"
           >
             {actionPending === 'shortlist' ? 'Shortlisting...' : 'Shortlist'}
           </button>

@@ -368,7 +368,7 @@ export function InterviewsView() {
           type="button"
           disabled={!canSubmit}
           onClick={handleSubmit}
-          className="w-full rounded-lg bg-accent px-4 py-3 text-[14px] font-semibold text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-lg bg-accent px-4 py-3 text-[14px] font-semibold text-navy hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? 'Creating interview(s)...' : 'Create interview(s)'}
         </button>

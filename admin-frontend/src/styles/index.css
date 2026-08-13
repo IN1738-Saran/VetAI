@@ -11,4 +11,27 @@
   body {
     @apply bg-surface text-ink font-sans antialiased;
   }
+
+  /* Visible focus state for every interactive element by default (plan
+     section 11: "all interactive elements must be keyboard-reachable and
+     have visible focus states"). Components that need a different treatment
+     against a dark background (e.g. Sidebar's nav links) override this
+     locally with their own focus-visible classes. */
+  a,
+  button,
+  input,
+  select,
+  textarea,
+  [tabindex] {
+    outline-offset: 2px;
+  }
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid theme('colors.accent.DEFAULT');
+    outline-offset: 2px;
+  }
 }

@@ -26,7 +26,7 @@ export function FeedErrorState({ message, onRetry }: { message: string; onRetry:
       <button
         type="button"
         onClick={onRetry}
-        className="mt-2 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover"
+        className="mt-2 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-navy hover:bg-accent-hover"
       >
         <RefreshCw size={14} /> Retry
       </button>

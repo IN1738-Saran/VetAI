@@ -146,7 +146,7 @@ export function CandidatesView() {
   ];
 
   return (
-    <div className="grid grid-cols-[220px_1fr] gap-5">
+    <div className="grid grid-cols-1 gap-5 lg:grid-cols-[220px_1fr]">
       <aside className="space-y-1">
         <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-ink-faint">
           Views
@@ -196,7 +196,7 @@ export function CandidatesView() {
               type="button"
               disabled={selected.size === 0 || scheduling}
               onClick={handleScheduleSelected}
-              className="rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-navy hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               {scheduling ? 'Scheduling...' : `Schedule ${selected.size} selected`}
             </button>
