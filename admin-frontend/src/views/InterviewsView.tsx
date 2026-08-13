@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { X, UploadCloud, CheckCircle2 } from 'lucide-react';
 import { createInterview, type CreateInterviewResult } from '@/lib/createInterview';
@@ -17,8 +18,16 @@ function formatBytes(n: number) {
 
 export function InterviewsView() {
   const queryClient = useQueryClient();
+  // Job Library's "Start interview" pre-fills the title via navigation
+  // state - this is a real convenience, not a fake shortcut: documents
+  // still have to be uploaded and the form still submits to the real,
+  // unmodified create-interview endpoint (plan section 4.4's "Do not
+  // connect a fake 'Start interview' button..." is about skipping real
+  // requirements, not about pre-filling a text field).
+  const location = useLocation();
+  const prefilledJobTitle = (location.state as { jobTitle?: string } | null)?.jobTitle ?? '';
 
-  const [jobTitle, setJobTitle] = useState('');
+  const [jobTitle, setJobTitle] = useState(prefilledJobTitle);
   const [emails, setEmails] = useState<string[]>([]);
   const [emailDraft, setEmailDraft] = useState('');
   const [jobDescriptionFile, setJobDescriptionFile] = useState<File | null>(null);
@@ -263,7 +272,10 @@ export function InterviewsView() {
                     >
                       <div>
                         <div className="font-medium text-ink">{f.name}</div>
-                        <div className="text-ink-muted">{formatBytes(f.size)}</div>
+                        <div className="text-ink-muted">
+                          {formatBytes(f.size)}
+                          {!isPdfLike(f) && ' - must be a PDF under 10MB'}
+                        </div>
                       </div>
                       <button type="button" onClick={() => setResumeFiles((prev) => prev.filter((_, idx) => idx !== i))}>
                         <X size={14} />

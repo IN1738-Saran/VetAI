@@ -89,6 +89,25 @@ export function topRolesByVolume(candidates: RawCandidate[], limit = 8): RoleVol
     .slice(0, limit);
 }
 
+// Used by Job Library to show a real candidate count/avg score next to each
+// sample job card, by matching the sample job's title against the real
+// feed's free-text jobtitle field. Case/whitespace-insensitive because real
+// titles have observed variants (e.g. "Senior Data Engineer (DBT & Snowflake)"
+// vs "Senior Data Engineer (DBT  & Snowflake)" - a double space) - this is
+// an approximate match against messy free text, not an exact key lookup.
+export function statsForJobTitle(candidates: RawCandidate[], jobtitle: string): RoleVolume {
+  const normalized = jobtitle.trim().toLowerCase().replace(/\s+/g, ' ');
+  const matches = candidates.filter(
+    (c) => (c.jobtitle || '').trim().toLowerCase().replace(/\s+/g, ' ') === normalized
+  );
+  const scores = matches.map(numericScore).filter((n): n is number => n !== null);
+  return {
+    jobtitle,
+    count: matches.length,
+    averageScore: scores.length ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null,
+  };
+}
+
 export type SavedViewId =
   | 'all'
   | 'needs-review'
