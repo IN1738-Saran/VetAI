@@ -2,11 +2,10 @@ node_modules/
 dist/
 build/
 *.tsbuildinfo
-.env
-.env.local
-.env.*.local
 *.log
 npm-debug.log*
+.env
+.env.*
 
 # Local runtime artifacts
 backend/transcripts/
