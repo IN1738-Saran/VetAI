@@ -1,12 +1,285 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { X, UploadCloud, CheckCircle2 } from 'lucide-react';
-import { createInterview, type CreateInterviewResult } from '@/lib/createInterview';
-import { NotAvailable } from '@/components/NotAvailable';
+import { X, UploadCloud, CheckCircle2, Copy, Check, ChevronDown, ChevronRight } from 'lucide-react';
+import {
+  createInterview,
+  type CreateInterviewResult,
+  type CreatedSession,
+  type ResumeInfo,
+} from '@/lib/createInterview';
+import { SAMPLE_JOBS, loadCustomJobs } from '@/lib/jobLibrary';
+import { fetchJobEmailConfigs, type JobEmailConfig } from '@/lib/jobEmailConfigs';
 
 const MAX_BYTES = 10 * 1024 * 1024;
 const MAX_RESUMES = 5;
+
+// Same real field keys (resumeFields.js's RESUME_FIELDS) and the same order
+// as Old_Version/backend/src/views/admin.html's OCR_FIELDS table. Label
+// casing is sentence case ("Full name") rather than admin.html's Title Case
+// ("Full Name") to match this app's own copy convention everywhere else -
+// not a change to what's extracted or shown, only to letter casing.
+const RESUME_FIELD_LABELS: Array<[keyof ResumeInfo, string]> = [
+  ['name', 'Full name'],
+  ['email', 'Email address'],
+  ['phone', 'Phone number'],
+  ['location', 'Current location'],
+  ['linkedin', 'LinkedIn profile'],
+  ['github', 'GitHub profile'],
+  ['portfolio', 'Portfolio website'],
+  ['jobTitle', 'Current job title'],
+  ['experience', 'Total experience'],
+  ['skills', 'Skills'],
+  ['technicalSkills', 'Technical skills'],
+  ['softSkills', 'Soft skills'],
+  ['education', 'Education'],
+  ['certifications', 'Certifications'],
+  ['projects', 'Projects'],
+  ['companies', 'Companies worked'],
+  ['designations', 'Designation(s)'],
+  ['languages', 'Languages known'],
+];
+
+function CopyLinkRow({ url }: { url: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard permission denied or unavailable - the link is still
+      // shown as selectable text, so the recruiter can copy it manually.
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 overflow-x-auto rounded-lg bg-surface px-3 py-2 text-[12px] text-ink-muted">
+        {url}
+      </div>
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-[12px] font-medium text-ink hover:bg-surface"
+      >
+        {copied ? <Check size={13} className="text-status-green" /> : <Copy size={13} />}
+        {copied ? 'Copied' : 'Copy link'}
+      </button>
+    </div>
+  );
+}
+
+function ResumeInfoValue({ value }: { value: string | string[] }) {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return <span className="text-ink-faint">Not found</span>;
+    return (
+      <div className="flex flex-wrap gap-1">
+        {value.map((item) => (
+          <span key={item} className="rounded-full bg-surface px-2 py-0.5 text-[11px] text-ink">
+            {item}
+          </span>
+        ))}
+      </div>
+    );
+  }
+  return value ? <span className="text-ink">{value}</span> : <span className="text-ink-faint">Not found</span>;
+}
+
+function RawTextPreview({ ocr }: { ocr: CreatedSession['ocr'] }) {
+  const [open, setOpen] = useState(false);
+  if (!ocr.rawText) return null;
+
+  return (
+    <div className="mt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-[11px] font-medium text-ink underline"
+      >
+        {open ? 'Hide' : 'Show'} the raw text read from this file
+      </button>
+      {open && (
+        <div className="mt-1.5 max-h-48 overflow-y-auto whitespace-pre-wrap rounded-lg bg-surface p-2 font-mono text-[11px] text-ink-muted">
+          {ocr.rawText}
+          {ocr.rawTextTruncated && ' (truncated)'}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// The full field-by-field breakdown from resumeFields.js's real, regex-based
+// extraction (name/email/skills/education/...), plus the same extraction
+// diagnostics (source/warnings/document details/raw text) Old_Version's
+// admin.html showed in its "Resume Information (OCR)" panel - this is the
+// tool that was specifically built to verify OCR worked on a given résumé
+// (particularly image-based ones), so it needs to show what actually
+// happened, not just a summary. Collapsed by default except the first
+// session, matching that panel's behavior.
+function ResumeInfoPanel({ session }: { session: CreatedSession }) {
+  const [open, setOpen] = useState(false);
+  const { ocr } = session;
+  const info = ocr.resumeInfo;
+  const stats = ocr.stats;
+  const doc = ocr.documentInfo;
+  const fromAzure = ocr.source === 'azure-document-intelligence';
+
+  if (!info) return null;
+
+  return (
+    <div className="mt-2 rounded-lg border border-border">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[12px] font-medium text-ink"
+      >
+        <span className="flex items-center gap-1.5">
+          {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          Resume information
+        </span>
+        {stats && (
+          <span className="text-[11px] font-normal text-ink-faint">
+            {fromAzure ? 'Read via Document Intelligence' : 'Read via local text extraction'} ·{' '}
+            {stats.fieldsDetected}/{stats.totalFields} fields found
+          </span>
+        )}
+      </button>
+      {open && (
+        <div className="border-t border-border px-3 py-3">
+          {ocr.warnings && ocr.warnings.length > 0 && (
+            <div className="mb-3 space-y-1">
+              {ocr.warnings.map((w, i) => (
+                <p key={i} className="text-[11px] text-status-amber-text">
+                  {w}
+                </p>
+              ))}
+            </div>
+          )}
+
+          <dl className="space-y-2">
+            {RESUME_FIELD_LABELS.map(([key, label]) => (
+              <div key={key} className="grid grid-cols-[130px_1fr] gap-2 text-[12px]">
+                <dt className="text-ink-muted">{label}</dt>
+                <dd>
+                  <ResumeInfoValue value={info[key]} />
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          {doc && (
+            <div className="mt-3 border-t border-border pt-3">
+              <div className="mb-1 text-[11px] font-semibold text-ink">Document details</div>
+              <dl className="space-y-1 text-[11px]">
+                <div className="grid grid-cols-[130px_1fr]">
+                  <dt className="text-ink-muted">Extraction source</dt>
+                  <dd className="text-ink">
+                    {fromAzure ? 'Azure Document Intelligence' : 'Local parser (fallback)'}
+                  </dd>
+                </div>
+                {doc.model && (
+                  <div className="grid grid-cols-[130px_1fr]">
+                    <dt className="text-ink-muted">Model</dt>
+                    <dd className="text-ink">{doc.model}</dd>
+                  </div>
+                )}
+                {doc.pages !== undefined && (
+                  <div className="grid grid-cols-[130px_1fr]">
+                    <dt className="text-ink-muted">Pages</dt>
+                    <dd className="text-ink">{doc.pages}</dd>
+                  </div>
+                )}
+                {doc.processingTimeSeconds !== undefined && (
+                  <div className="grid grid-cols-[130px_1fr]">
+                    <dt className="text-ink-muted">Processing time</dt>
+                    <dd className="text-ink">{doc.processingTimeSeconds}s</dd>
+                  </div>
+                )}
+                <div className="grid grid-cols-[130px_1fr]">
+                  <dt className="text-ink-muted">Characters extracted</dt>
+                  <dd className="text-ink">{ocr.charactersExtracted}</dd>
+                </div>
+              </dl>
+            </div>
+          )}
+
+          <RawTextPreview ocr={ocr} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Real, existing data (public.job_email_configs, via lib/jobEmailConfigs.ts)
+// - the same per-job-title notification list Email Center manages. Picking
+// one here fills the job title (if empty) and replaces the current email
+// chips with that list's real addresses, matching Old_Version's admin.html
+// "Saved job-title configs" suggestions in the New Interview form exactly.
+function SavedConfigDropdown({
+  configs,
+  typed,
+  onSelectConfig,
+  onAddEmail,
+}: {
+  configs: JobEmailConfig[];
+  typed: string;
+  onSelectConfig: (config: JobEmailConfig) => void;
+  onAddEmail: (email: string) => void;
+}) {
+  const looksLikeEmail = typed.includes('@');
+
+  if (configs.length === 0 && !typed) {
+    return <div className="px-3 py-3 text-[12px] text-ink-faint">No saved email lists yet.</div>;
+  }
+
+  return (
+    <div>
+      {configs.length > 0 && (
+        <>
+          <div className="border-b border-border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint">
+            Saved job-title lists
+          </div>
+          {configs.map((config) => {
+            const emailList = config.emails
+              .split(',')
+              .map((e) => e.trim())
+              .filter(Boolean);
+            return (
+              <button
+                key={config.id}
+                type="button"
+                onClick={() => onSelectConfig(config)}
+                className="block w-full border-b border-border px-3 py-2 text-left last:border-0 hover:bg-surface"
+              >
+                <div className="flex items-center gap-2 text-[13px] font-medium text-ink">
+                  {config.jobtitle}
+                  <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-normal text-ink-muted">
+                    {emailList.length} email{emailList.length !== 1 ? 's' : ''}
+                  </span>
+                </div>
+                <div className="truncate text-[11px] text-ink-faint">{config.emails}</div>
+              </button>
+            );
+          })}
+        </>
+      )}
+      {looksLikeEmail && (
+        <button
+          type="button"
+          onClick={() => onAddEmail(typed)}
+          className="block w-full px-3 py-2 text-left text-[13px] text-ink hover:bg-surface"
+        >
+          + Add "{typed}" as a new email
+        </button>
+      )}
+      {typed && !looksLikeEmail && (
+        <div className="px-3 py-2 text-[12px] text-ink-faint">Press Enter or , to add this email.</div>
+      )}
+    </div>
+  );
+}
 
 function isPdfLike(file: File) {
   return file.name.toLowerCase().endsWith('.pdf') && file.size > 0 && file.size <= MAX_BYTES;
@@ -28,16 +301,21 @@ export function InterviewsView() {
   const prefilledJobTitle = (location.state as { jobTitle?: string } | null)?.jobTitle ?? '';
 
   const [jobTitle, setJobTitle] = useState(prefilledJobTitle);
+  const jobLibraryTitles = [...SAMPLE_JOBS, ...loadCustomJobs()].map((j) => j.title);
   const [emails, setEmails] = useState<string[]>([]);
   const [emailDraft, setEmailDraft] = useState('');
   const [jobDescriptionFile, setJobDescriptionFile] = useState<File | null>(null);
   const [resumeFiles, setResumeFiles] = useState<File[]>([]);
-  // Cosmetic-only fields (see NotAvailable notes below) - never sent to the
-  // backend, which has no length/source/scheduling field today (plan
-  // Strict Constraint #9: don't fake behavior the backend doesn't have).
+  // Cosmetic-only fields (see notes below) - never sent to the backend,
+  // which has no length/source field today (plan Strict Constraint #9:
+  // don't fake behavior the backend doesn't have). The "Schedule" delivery
+  // option that used to sit next to these was removed outright rather than
+  // left disabled - Old_Version/admin.html never had a scheduling concept
+  // at all, and interviews are always sent immediately once created; a
+  // permanently-disabled button for a choice that doesn't exist just read
+  // as broken.
   const [interviewLength, setInterviewLength] = useState<30 | 45 | 60>(45);
   const [source, setSource] = useState('Naukri');
-  const [delivery, setDelivery] = useState<'now' | 'schedule'>('now');
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -50,6 +328,71 @@ export function InterviewsView() {
     const value = emailDraft.trim().replace(/,$/, '');
     if (value && !emails.includes(value)) setEmails((prev) => [...prev, value]);
     setEmailDraft('');
+  }
+
+  // Real saved job-title/email lists (public.job_email_configs) - see
+  // SavedConfigDropdown above. Only fetched/shown while the email field is
+  // in focus, so editing the job title elsewhere on the page never pops a
+  // dropdown under a field the recruiter isn't looking at.
+  const [configSuggestions, setConfigSuggestions] = useState<JobEmailConfig[]>([]);
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
+  const emailShellRef = useRef<HTMLDivElement>(null);
+  const debounceRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (emailShellRef.current && !emailShellRef.current.contains(e.target as Node)) {
+        setSuggestOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  function queueConfigFetch(query: string, delay: number) {
+    window.clearTimeout(debounceRef.current);
+    debounceRef.current = window.setTimeout(async () => {
+      try {
+        const configs = await fetchJobEmailConfigs(query);
+        setConfigSuggestions(configs);
+        setSuggestOpen(true);
+      } catch {
+        setConfigSuggestions([]);
+      }
+    }, delay);
+  }
+
+  function handleEmailFocus() {
+    setEmailFocused(true);
+    queueConfigFetch(jobTitle.trim(), 0);
+  }
+
+  function handleEmailDraftChange(value: string) {
+    setEmailDraft(value);
+    queueConfigFetch(jobTitle.trim() || value.trim(), 180);
+  }
+
+  function handleJobTitleChange(value: string) {
+    setJobTitle(value);
+    if (emailFocused) queueConfigFetch(value.trim(), 300);
+  }
+
+  function applySavedConfig(config: JobEmailConfig) {
+    if (!jobTitle.trim()) setJobTitle(config.jobtitle);
+    const newEmails = config.emails
+      .split(',')
+      .map((e) => e.trim())
+      .filter(Boolean);
+    setEmails(newEmails);
+    setEmailDraft('');
+    setSuggestOpen(false);
+  }
+
+  function addSuggestedEmail(email: string) {
+    if (email && !emails.includes(email)) setEmails((prev) => [...prev, email]);
+    setEmailDraft('');
+    setSuggestOpen(false);
   }
 
   const jdReady = jobDescriptionFile !== null && isPdfLike(jobDescriptionFile);
@@ -70,6 +413,14 @@ export function InterviewsView() {
       setResult(res);
       if (res.success) {
         queryClient.invalidateQueries({ queryKey: ['candidates'] });
+        // The candidates feed comes from an external pipeline that needs a
+        // few seconds to pick up a newly created interview - one immediate
+        // refetch can easily run before that finishes. A second, delayed
+        // refetch gives the Candidates page a real chance of showing the
+        // new record without a manual reload.
+        window.setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['candidates'] });
+        }, 4000);
       }
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Failed to create interview');
@@ -88,16 +439,26 @@ export function InterviewsView() {
           </div>
           {result.error && <p className="text-[13px] text-status-red-text">{result.error}</p>}
           {result.sessions && result.sessions.length > 0 && (
-            <ul className="space-y-2 text-[13px]">
-              {result.sessions.map((s) => (
-                <li key={s.sessionId} className="rounded-lg bg-surface px-3 py-2">
-                  <div className="font-medium text-ink">{s.resumeFileName}</div>
-                  <div className="text-ink-muted">
-                    {s.ocr.charactersExtracted} characters extracted via {s.ocr.source}
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <>
+              <p className="mb-2 text-[13px] text-ink-muted">Share these links with your candidates:</p>
+              <ul className="space-y-3 text-[13px]">
+                {result.sessions.map((s) => {
+                  const candidateName = s.ocr.resumeInfo?.name;
+                  return (
+                    <li key={s.sessionId} className="rounded-lg bg-surface px-3 py-3">
+                      <div className="font-medium text-ink">{candidateName || s.resumeFileName}</div>
+                      {candidateName && (
+                        <div className="text-[11px] text-ink-faint">{s.resumeFileName}</div>
+                      )}
+                      <div className="mt-2">
+                        <CopyLinkRow url={s.interviewUrl} />
+                      </div>
+                      <ResumeInfoPanel session={s} />
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
           )}
           {result.skipped && result.skipped.length > 0 && (
             <div className="mt-4">
@@ -137,21 +498,30 @@ export function InterviewsView() {
               <label className="mb-1 block text-[13px] font-medium text-ink">Job title *</label>
               <input
                 value={jobTitle}
-                onChange={(e) => setJobTitle(e.target.value)}
+                onChange={(e) => handleJobTitleChange(e.target.value)}
                 placeholder="e.g. Data Engineer - Entry Level"
                 className="w-full rounded-lg border border-border px-3 py-2 text-[13px]"
               />
-              <button
-                type="button"
-                disabled
-                title="Job Library is a placeholder in this pass - no saved jobs exist to fill from yet"
-                className="mt-1 text-[12px] text-ink-faint underline decoration-dotted disabled:cursor-not-allowed"
+              <select
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) setJobTitle(e.target.value);
+                }}
+                className="mt-1 w-full rounded border-none bg-transparent text-[12px] text-ink-faint underline decoration-dotted"
+                aria-label="Fill job title from Job Library"
               >
-                Fill from Job Library
-              </button>
+                <option value="" disabled>
+                  Fill from Job Library
+                </option>
+                {jobLibraryTitles.map((title) => (
+                  <option key={title} value={title}>
+                    {title}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            <div>
+            <div ref={emailShellRef} className="relative">
               <label className="mb-1 block text-[13px] font-medium text-ink">Candidate email(s) *</label>
               <div className="flex flex-wrap gap-1.5 rounded-lg border border-border px-2 py-1.5">
                 {emails.map((email) => (
@@ -167,18 +537,34 @@ export function InterviewsView() {
                 ))}
                 <input
                   value={emailDraft}
-                  onChange={(e) => setEmailDraft(e.target.value)}
+                  onChange={(e) => handleEmailDraftChange(e.target.value)}
+                  onFocus={handleEmailFocus}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ',') {
                       e.preventDefault();
                       addEmail();
+                      setSuggestOpen(false);
                     }
+                    if (e.key === 'Escape') setSuggestOpen(false);
                   }}
                   onBlur={addEmail}
                   placeholder="Press Enter or , to add"
                   className="min-w-[120px] flex-1 border-none text-[13px] outline-none"
                 />
               </div>
+              {suggestOpen && (
+                <div
+                  onMouseDown={(e) => e.preventDefault()}
+                  className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-border bg-card shadow-card"
+                >
+                  <SavedConfigDropdown
+                    configs={configSuggestions}
+                    typed={emailDraft.trim()}
+                    onSelectConfig={applySavedConfig}
+                    onAddEmail={addSuggestedEmail}
+                  />
+                </div>
+              )}
               <p className="mt-1 text-[12px] text-ink-faint">One address per candidate.</p>
             </div>
           </div>
@@ -296,15 +682,14 @@ export function InterviewsView() {
             </div>
           </div>
           <p className="mt-3 text-[12px] text-ink-faint">
-            Read status and email detection per resume (as shown in the reference design) are only known once
-            Document Intelligence actually processes the file server-side - there is no pre-submission preview
-            endpoint, so that feedback appears in the results after you create the interview(s), not before.
+            Resume read-status and detected contact details appear in the results below after you create
+            the interview(s) - not before.
           </p>
         </div>
 
         <div className="rounded-card bg-card p-5 shadow-card">
-          <div className="mb-1 text-[15px] font-semibold text-ink">3 - Length and delivery</div>
-          <p className="mb-4 text-[12px] text-ink-muted">Cosmetic only for now - see notes below</p>
+          <div className="mb-1 text-[15px] font-semibold text-ink">3 - Interview length and source</div>
+          <p className="mb-4 text-[12px] text-ink-muted">For your planning - see notes below</p>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
@@ -325,7 +710,7 @@ export function InterviewsView() {
                 ))}
               </div>
               <p className="mt-1 text-[12px] text-ink-faint">
-                Not sent to the backend - interview duration has no server-side field today.
+                For your planning - not saved with the interview yet.
               </p>
             </div>
 
@@ -341,33 +726,10 @@ export function InterviewsView() {
                 <option>Referral</option>
                 <option>Other</option>
               </select>
-              <p className="mt-1 text-[12px] text-ink-faint">Not sent to the backend - no source field exists today.</p>
+              <p className="mt-1 text-[12px] text-ink-faint">For your own reference - not saved with the interview yet.</p>
             </div>
           </div>
 
-          <div className="mt-4">
-            <label className="mb-1 block text-[13px] font-medium text-ink">Send invitations</label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setDelivery('now')}
-                className={
-                  'rounded-lg border px-3 py-2 text-[13px] font-medium ' +
-                  (delivery === 'now' ? 'border-navy bg-navy text-white' : 'border-border text-ink')
-                }
-              >
-                Now
-              </button>
-              <button
-                type="button"
-                disabled
-                title="Not implemented - would require new backend behavior and explicit approval before shipping (see plan Functional Requirement 5)"
-                className="cursor-not-allowed rounded-lg border border-border px-3 py-2 text-[13px] font-medium text-ink-faint"
-              >
-                Schedule
-              </button>
-            </div>
-          </div>
         </div>
 
         {submitError && (
@@ -387,16 +749,6 @@ export function InterviewsView() {
       </div>
 
       <div className="space-y-5">
-        <div className="rounded-card bg-card p-5 shadow-card">
-          <div className="mb-3 text-[14px] font-semibold text-ink">Job description</div>
-          <NotAvailable reason="POST /api/create-interview does not return structured JD analysis (required/preferred skills, seniority) either before or after submission - only per-resume OCR diagnostics come back" />
-        </div>
-
-        <div className="rounded-card bg-card p-5 shadow-card">
-          <div className="mb-3 text-[14px] font-semibold text-ink">Interview plan</div>
-          <NotAvailable reason="question count/category breakdown is not returned by any existing endpoint" />
-        </div>
-
         <div className="rounded-card bg-card p-5 shadow-card">
           <div className="mb-3 text-[14px] font-semibold text-ink">Ready to run</div>
           <ul className="space-y-2 text-[13px]">

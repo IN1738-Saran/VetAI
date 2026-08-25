@@ -13,8 +13,8 @@ export function Sidebar() {
   return (
     <aside className="flex h-screen w-16 shrink-0 flex-col bg-navy px-2 py-5 lg:w-[248px] lg:px-3">
       <div className="mb-8 flex items-center gap-2.5 px-1 lg:px-2">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-sm font-bold text-navy">
-          AI
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
+          <img src="/Systech_Logo1.png" alt="Systech" className="h-full w-full object-cover" />
         </div>
         <div className="hidden leading-tight lg:block">
           <div className="text-[15px] font-semibold text-white">VetAI</div>
@@ -28,13 +28,6 @@ export function Sidebar() {
         <NavSection title="Main" items={mainItems} />
         <NavSection title="Settings" items={settingsItems} />
       </nav>
-
-      <div className="mt-4 hidden rounded-card bg-navy-light p-3.5 lg:block">
-        <div className="text-[13px] font-semibold text-white">Live data</div>
-        <div className="mt-1 text-[11px] leading-snug text-sidebar-muted">
-          Dashboard, Candidates, Candidate Profile and Analytics are wired to the real feed.
-        </div>
-      </div>
     </aside>
   );
 }

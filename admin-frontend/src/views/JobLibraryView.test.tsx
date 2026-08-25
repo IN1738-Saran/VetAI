@@ -6,7 +6,10 @@ import { renderWithProviders, mockCandidatesFetch } from '@/test/testUtils';
 import { EMPTY_CANDIDATES, MINIMAL_CANDIDATES } from '@/test/fixtures';
 import type { RawCandidate } from '@/lib/candidates';
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  window.localStorage.clear();
+});
 
 // Two real candidates against a sample job's exact title, to prove the
 // per-card stats are genuinely computed, not hardcoded.
@@ -72,7 +75,20 @@ describe('JobLibraryView', () => {
     mockCandidatesFetch(MINIMAL_CANDIDATES);
     renderWithProviders(<JobLibraryView />);
     expect(await screen.findByText('Senior QA Analyst')).toBeInTheDocument();
-    // "+ New job" must stay disabled - this is a placeholder screen, not a real form.
-    expect(screen.getByRole('button', { name: /new job/i })).toBeDisabled();
+  });
+
+  it('"New job" opens a real form and adding a job makes it appear in the list', async () => {
+    window.localStorage.clear();
+    mockCandidatesFetch(EMPTY_CANDIDATES);
+    renderWithProviders(<JobLibraryView />);
+    await screen.findByText('Senior QA Analyst');
+
+    await userEvent.click(screen.getByRole('button', { name: /new job/i }));
+    await userEvent.type(screen.getByPlaceholderText(/senior analytics engineer/i), 'Test Role');
+    await userEvent.type(screen.getByPlaceholderText(/data activation/i), 'Test Department');
+    await userEvent.click(screen.getByRole('button', { name: /create job/i }));
+
+    expect(await screen.findByText('Test Role')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Test Department' })).toBeInTheDocument();
   });
 });

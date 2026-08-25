@@ -107,3 +107,34 @@ export async function setCandidateStatus(sessionid: string, status: string): Pro
       });
   if (!res.ok) throw new Error('Failed to update status');
 }
+
+// Ported from dashboard.html's deleteCandidate(sessionId): same single
+// same-origin backend route (no n8n/proxy split needed here - the
+// candidateController.js DELETE endpoint is unchanged from Old_Version and
+// was never a direct-to-n8n call in the first place).
+//
+// A 404 here is an expected, documented outcome (baseline/endpoint-
+// contracts.md) - it means no matching row exists in Postgres `candidates`
+// for this session (e.g. a session that only ever appeared via the n8n
+// dataentry feed and was never scored/inserted there), not necessarily an
+// application bug. Callers should word the resulting message accordingly
+// rather than treating it as a generic failure.
+export async function deleteCandidate(sessionid: string): Promise<void> {
+  const res = await fetch(`/api/delete-candidate/${sessionid}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!res.ok) {
+    let message = 'Failed to delete candidate';
+    try {
+      const body = await res.json();
+      if (body?.error) {
+        message = res.status === 404 ? 'No record was found for this candidate to delete.' : body.error;
+      }
+    } catch {
+      // response body wasn't JSON - fall back to the generic message above.
+    }
+    throw new Error(message);
+  }
+}

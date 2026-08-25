@@ -3,12 +3,15 @@ import {
   numericScore,
   isPassing,
   computeDashboardKpis,
+  computePipelineFunnel,
   topRolesByVolume,
   computeSavedViews,
   filterBySavedView,
   computeOutcomes,
   submissionsOverTime,
   filterByDateRange,
+  buildCandidateTimeline,
+  type ArtifactsMeta,
 } from './candidateDerived';
 import { REALISTIC_CANDIDATES, EMPTY_CANDIDATES, MINIMAL_CANDIDATES } from '@/test/fixtures';
 
@@ -69,6 +72,79 @@ describe('computeDashboardKpis', () => {
     expect(kpis.averageScore).toBeNull();
     expect(kpis.passRate).toBeNull();
     expect(kpis.needsReviewCount).toBe(0);
+  });
+});
+
+describe('computePipelineFunnel', () => {
+  it('derives every stage from a real field/rule, no fabricated data', () => {
+    const stages = computePipelineFunnel(REALISTIC_CANDIDATES);
+    const byLabel = Object.fromEntries(stages.map((s) => [s.label, s.count]));
+    expect(byLabel.Applied).toBe(5);
+    expect(byLabel.Parsed).toBe(5); // all 5 have a real overall_score
+    expect(byLabel.Interviewed).toBe(1); // s3, status = Interview Completed
+    expect(byLabel.Passed).toBe(2); // s1, s2 - same rule as isPassing()
+    expect(byLabel.Shortlisted).toBe(0); // none literally have status = 'Shortlisted'
+    // Deliberately no "Qualified" stage - see the function's own comment.
+    expect(stages.find((s) => s.label === 'Qualified')).toBeUndefined();
+  });
+
+  it('Shortlisted only counts the literal status this app itself writes', () => {
+    const stages = computePipelineFunnel([
+      ...REALISTIC_CANDIDATES,
+      { ...REALISTIC_CANDIDATES[0], sessionid: 's6', status: 'Shortlisted' },
+    ]);
+    expect(stages.find((s) => s.label === 'Shortlisted')?.count).toBe(1);
+  });
+
+  it('handles an empty payload without throwing', () => {
+    const stages = computePipelineFunnel(EMPTY_CANDIDATES);
+    expect(stages.every((s) => s.count === 0)).toBe(true);
+  });
+});
+
+describe('buildCandidateTimeline', () => {
+  const noArtifacts: ArtifactsMeta = { configured: false, profile: null, feedback: null, video: null };
+
+  it('returns Created + inferred Interview scheduled when no artifacts exist', () => {
+    const events = buildCandidateTimeline(REALISTIC_CANDIDATES[0], noArtifacts); // s1, Interview Scheduled
+    expect(events.map((e) => e.label)).toEqual(['Candidate record created', 'Interview scheduled']);
+    // Sorted chronologically - createdat before updatedat.
+    expect(new Date(events[0].timestamp).getTime()).toBeLessThan(new Date(events[1].timestamp).getTime());
+  });
+
+  it('adds real artifact-generation events when they exist, sorted chronologically', () => {
+    const artifacts: ArtifactsMeta = {
+      configured: true,
+      profile: { exists: true, generatedAt: '2025-12-23T10:00:00.000Z' },
+      feedback: { exists: true, generatedAt: '2025-12-24T12:00:00.000Z' },
+      video: { exists: true, generatedAt: '2025-12-24T11:00:00.000Z' },
+    };
+    const events = buildCandidateTimeline(REALISTIC_CANDIDATES[2], artifacts); // s3, Interview Completed
+    expect(events.map((e) => e.label)).toEqual([
+      'Candidate record created',
+      'Profile match report generated',
+      'Interview completed',
+      'Interview recording uploaded',
+      'Interview feedback generated',
+    ]);
+    const timestamps = events.map((e) => new Date(e.timestamp).getTime());
+    expect(timestamps).toEqual([...timestamps].sort((a, b) => a - b));
+  });
+
+  it('uses the recording upload time for "Interview completed" when available, not the feed updatedat', () => {
+    const artifacts: ArtifactsMeta = {
+      configured: true,
+      profile: null,
+      feedback: null,
+      video: { exists: true, generatedAt: '2025-12-24T11:00:00.000Z' },
+    };
+    const events = buildCandidateTimeline(REALISTIC_CANDIDATES[2], artifacts);
+    const completed = events.find((e) => e.label === 'Interview completed');
+    expect(completed?.timestamp).toBe('2025-12-24T11:00:00.000Z');
+  });
+
+  it('returns an empty array for a candidate with no timestamps and no artifacts', () => {
+    expect(buildCandidateTimeline(MINIMAL_CANDIDATES[0], noArtifacts)).toEqual([]);
   });
 });
 

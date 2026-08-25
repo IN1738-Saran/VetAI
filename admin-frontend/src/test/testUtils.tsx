@@ -37,7 +37,7 @@ export function renderWithProviders(
 // goes through (lib/candidates.ts -> fetchCandidates). Component tests use
 // this instead of hitting the real n8n endpoint.
 export function mockCandidatesFetch(candidates: RawCandidate[]) {
-  vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+  return vi.spyOn(globalThis, 'fetch').mockResolvedValue({
     ok: true,
     json: async () => candidates,
   } as Response);

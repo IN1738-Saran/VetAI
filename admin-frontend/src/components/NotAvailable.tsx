@@ -1,16 +1,17 @@
 interface NotAvailableProps {
+  /** A complete, plain-language sentence - no prefix is added, so write it as one. */
   reason: string;
 }
 
-// Distinct from PlaceholderView (whole-page phase gating): this is for a
-// section within an otherwise-live screen whose data the real n8n feed does
-// not provide (plan section 4.3 - render "not scored yet"/placeholder
-// rather than fabricate). Always shown with the reason as visible text, not
-// just a visual treatment.
+// For a section within an otherwise-live screen that has nothing to show yet.
+// The dashed border/muted styling is the "this isn't live content" signal,
+// so `reason` is rendered as-is, in plain, professional language - not
+// prefixed with "Not available -" (which read as an error to end users)
+// and never naming internal implementation details.
 export function NotAvailable({ reason }: NotAvailableProps) {
   return (
     <div className="rounded-lg border border-dashed border-border bg-surface px-4 py-6 text-center text-[13px] text-ink-faint">
-      Not available - {reason}
+      {reason}
     </div>
   );
 }

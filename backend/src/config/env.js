@@ -33,6 +33,22 @@ export const AZURE_VOICELIVE_MODEL = process.env.AZURE_VOICELIVE_MODEL || 'gpt-r
 export const AZURE_VOICELIVE_API_VERSION = process.env.AZURE_VOICELIVE_API_VERSION || '2026-01-01-preview';
 
 // ---------------------------------------------------------------------------
+// Azure OpenAI - text chat completions (the recruiter-facing "AI Assistant",
+// a Q&A panel over existing candidates/jobs/interviews)
+// ---------------------------------------------------------------------------
+// Deliberately SEPARATE from AZURE_VOICELIVE_* above: gpt-realtime-2.1-mini
+// is the realtime voice-to-voice interview model and is never reused here.
+// This is a plain (non-realtime) chat-completions deployment - can be a
+// smaller/cheaper model under the same or a different Azure OpenAI resource.
+// When endpoint/key are unset, the Assistant honestly reports itself as not
+// configured rather than failing - same pattern as Document Intelligence
+// below.
+export const AZURE_OPENAI_CHAT_ENDPOINT = process.env.AZURE_OPENAI_CHAT_ENDPOINT || '';
+export const AZURE_OPENAI_CHAT_API_KEY = process.env.AZURE_OPENAI_CHAT_API_KEY || '';
+export const AZURE_OPENAI_CHAT_DEPLOYMENT = process.env.AZURE_OPENAI_CHAT_DEPLOYMENT || 'gpt-4o-mini';
+export const AZURE_OPENAI_CHAT_API_VERSION = process.env.AZURE_OPENAI_CHAT_API_VERSION || '2024-08-01-preview';
+
+// ---------------------------------------------------------------------------
 // Azure AI Document Intelligence (OCR for résumé / job-description extraction)
 // ---------------------------------------------------------------------------
 // When the endpoint and key are BOTH set, uploaded documents are read with

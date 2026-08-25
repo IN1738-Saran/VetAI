@@ -9,6 +9,8 @@ import interviewRoutes from './interviewRoutes.js';
 import candidateRoutes from './candidateRoutes.js';
 import jobEmailRoutes from './jobEmailRoutes.js';
 import candidatesFeedRoutes from './candidatesFeedRoutes.js';
+import assistantRoutes from './assistantRoutes.js';
+import systemStatusRoutes from './systemStatusRoutes.js';
 
 const router = Router();
 
@@ -18,5 +20,7 @@ router.use(candidateRoutes);
 router.use(jobEmailRoutes);
 // Phase 5 (optional, additive) - see candidatesFeedRoutes.js.
 router.use(candidatesFeedRoutes);
+router.use(assistantRoutes);
+router.use(systemStatusRoutes);
 
 export default router;

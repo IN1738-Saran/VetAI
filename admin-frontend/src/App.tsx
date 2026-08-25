@@ -1,13 +1,24 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, createRoutesFromElements } from 'react-router-dom';
-import { Sparkles, Mail, FileText, Building2, UserCircle } from 'lucide-react';
 import { Shell } from '@/shell/Shell';
 import { DashboardView } from '@/views/DashboardView';
 import { InterviewsView } from '@/views/InterviewsView';
 import { CandidatesView } from '@/views/CandidatesView';
 import { CandidateProfileView } from '@/views/CandidateProfileView';
 import { JobLibraryView } from '@/views/JobLibraryView';
-import { ComingSoonView } from '@/views/ComingSoonView';
+import { AIAssistantView } from '@/views/AIAssistantView';
+import { EmailCenterView } from '@/views/EmailCenterView';
+import { ReportsView } from '@/views/ReportsView';
+import { OrganizationView } from '@/views/OrganizationView';
+import { ProfileView } from '@/views/ProfileView';
+import { getDefaultLandingPage } from '@/lib/preferences';
+
+// Reads the real, persisted per-browser preference (see Profile settings)
+// at actual navigation time, not module-eval time - a plain <Navigate
+// to="/dashboard" /> would only ever read the hardcoded default.
+function IndexRedirect() {
+  return <Navigate to={getDefaultLandingPage()} replace />;
+}
 
 // Recharts (via Donut/LineChartCard/HorizontalBarChart) is only pulled into
 // its own chunk when Analytics is actually visited, per plan section 13
@@ -22,7 +33,7 @@ const AnalyticsView = lazy(() =>
 // createBrowserRouter/RouterProvider.
 export const routes = createRoutesFromElements(
   <Route element={<Shell />}>
-    <Route index element={<Navigate to="/dashboard" replace />} />
+    <Route index element={<IndexRedirect />} />
 
     <Route
       path="/dashboard"
@@ -61,28 +72,28 @@ export const routes = createRoutesFromElements(
 
     <Route
       path="/ai-assistant"
-      element={<ComingSoonView icon={Sparkles} label="AI Assistant" />}
-      handle={{ title: 'AI Assistant' }}
+      element={<AIAssistantView />}
+      handle={{ title: 'AI Assistant', subtitle: 'Ask questions about candidates, jobs and interviews' }}
     />
     <Route
       path="/email-center"
-      element={<ComingSoonView icon={Mail} label="Email Center" />}
-      handle={{ title: 'Email Center' }}
+      element={<EmailCenterView />}
+      handle={{ title: 'Email Center', subtitle: 'Notification lists for interview invitations' }}
     />
     <Route
       path="/reports"
-      element={<ComingSoonView icon={FileText} label="Reports" />}
-      handle={{ title: 'Reports' }}
+      element={<ReportsView />}
+      handle={{ title: 'Reports', subtitle: 'Export and review hiring data' }}
     />
     <Route
       path="/organization"
-      element={<ComingSoonView icon={Building2} label="Organization" />}
-      handle={{ title: 'Organization' }}
+      element={<OrganizationView />}
+      handle={{ title: 'Organization', subtitle: 'Workspace and connected services' }}
     />
     <Route
       path="/profile"
-      element={<ComingSoonView icon={UserCircle} label="Profile" />}
-      handle={{ title: 'Profile' }}
+      element={<ProfileView />}
+      handle={{ title: 'Profile', subtitle: 'Access and preferences' }}
     />
 
     <Route path="*" element={<Navigate to="/dashboard" replace />} />

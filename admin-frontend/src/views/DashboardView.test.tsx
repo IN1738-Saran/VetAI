@@ -17,8 +17,14 @@ describe('DashboardView', () => {
     await waitFor(() =>
       expect(screen.getByText('All candidates').parentElement).toHaveTextContent('5')
     );
-    // Sections with no real data source render an explicit "not available" state.
-    expect(screen.getAllByText(/Not available/i).length).toBeGreaterThan(0);
+    // Pipeline funnel: every stage is derived from a real field/rule -
+    // "Qualified" is the one deliberately-omitted stage (see caption).
+    expect(screen.getByText('Applied')).toBeInTheDocument();
+    expect(screen.getByText('Parsed')).toBeInTheDocument();
+    expect(screen.getByText('Interviewed')).toBeInTheDocument();
+    expect(screen.getByText('Passed')).toBeInTheDocument();
+    expect(screen.getByText('Shortlisted')).toBeInTheDocument();
+    expect(screen.getByText(/no separate "Qualified" stage/i)).toBeInTheDocument();
   });
 
   it('renders an empty state for zero candidates, not a crash', async () => {
